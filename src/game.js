@@ -34,10 +34,10 @@ const resultScoreEl = document.getElementById("result-score-value");
 const resultBreakdownEl = document.getElementById("result-breakdown");
 
 function render() {
-  const damagedIds = state.carryResult?.damagedIds ?? new Set();
-  renderBag(bagEl, state.grid, state.bag, ITEMS, damagedIds, {
+  renderBag(bagEl, state.grid, state.bag, ITEMS, {
     onDrop: handleDropOnBag,
     isRemovable: (p) => isRemovable(p, state.bag, ITEMS),
+    damagedIds: state.carryResult?.damagedIds,
   });
   renderTray(trayEl, state.tray, ITEMS, { onDrop: handleDropOnTray });
   renderResult();

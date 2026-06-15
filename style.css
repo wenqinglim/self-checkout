@@ -88,8 +88,12 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   user-select: none;
 }
 
+/* Both children are promoted above the .item.damaged ::after overlay
+ * (which paints last as a sibling and would otherwise obscure them). */
 .item-label {
   font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 
 .item-weight {
@@ -99,6 +103,8 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   background: rgba(0, 0, 0, 0.28);
   padding: 1px 5px;
   border-radius: 3px;
+  position: relative;
+  z-index: 1;
 }
 
 /* --- Drag affordances --------------------------------------------------- */

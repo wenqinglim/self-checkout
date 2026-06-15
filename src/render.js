@@ -4,11 +4,11 @@
 // Draws the bag grid and any placed items into `container`. Wires the
 // container as a drop target; calls callbacks.onDrop(instanceId, dropX)
 // when an item is dropped on the bag. `callbacks.isRemovable(placement)`
-// is asked to decide if a bag item is draggable. `damagedIds` is a Set of
-// placement ids to render with the broken-item treatment (post-Carry).
-export function renderBag(
-  container, grid, placements, items, damagedIds = new Set(), callbacks = {},
-) {
+// is asked to decide if a bag item is draggable. `callbacks.damagedIds`
+// is an optional Set of placement ids to render with the broken-item
+// treatment (post-Carry).
+export function renderBag(container, grid, placements, items, callbacks = {}) {
+  const damagedIds = callbacks.damagedIds ?? new Set();
   container.innerHTML = "";
   container.classList.add("bag");
   container.style.setProperty("--cols", grid.W);
