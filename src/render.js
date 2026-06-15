@@ -1,9 +1,11 @@
-// DOM rendering. This is the only module that touches the DOM in this slice.
+// DOM rendering and input. This is the only module that touches the DOM.
 // Pure logic and data must never depend on anything here.
 
-// Draws the bag grid and any placed items into `container`.
-// `placements` is an array of { id, itemId, x, y }.
-export function renderBag(container, grid, placements, items) {
+// Draws the bag grid and any placed items into `container`. Wires the
+// container as a drop target; calls callbacks.onDrop(instanceId, dropX)
+// when an item is dropped on the bag. `callbacks.isRemovable(placement)`
+// is asked to decide if a bag item is draggable.
+export function renderBag(container, grid, placements, items, callbacks = {}) {
   container.innerHTML = "";
   container.classList.add("bag");
   container.style.setProperty("--cols", grid.W);
@@ -22,30 +24,63 @@ export function renderBag(container, grid, placements, items) {
   }
 
   for (const p of placements) {
-    container.appendChild(itemEl(p, items, /* placedInBag */ true));
+    const locked = callbacks.isRemovable
+      ? !callbacks.isRemovable(p)
+      : false;
+    container.appendChild(itemEl(p, items, {
+      placedInBag: true,
+      source: "bag",
+      locked,
+    }));
   }
+
+  wireDropTarget(container, (e) => {
+    const instanceId = e.dataTransfer.getData("text/instance-id");
+    if (!instanceId) return;
+    const rawCol = columnFromEvent(container, grid, e);
+    // Subtract the cursor-offset captured at dragstart so the item drops
+    // where the player aimed — i.e. the cursor stays anchored on the same
+    // sub-cell of a wide item from grab to release.
+    const colOffset = parseInt(
+      e.dataTransfer.getData("text/col-offset") || "0", 10,
+    );
+    callbacks.onDrop?.(instanceId, rawCol - colOffset);
+  });
 }
 
 // Draws the unplaced (tray) items into `container` as a flat list.
 // Each tray item keeps its real footprint so the player can read its size.
-export function renderTray(container, trayPlacements, items) {
+export function renderTray(container, trayPlacements, items, callbacks = {}) {
   container.innerHTML = "";
   container.classList.add("tray");
   for (const p of trayPlacements) {
-    container.appendChild(itemEl(p, items, /* placedInBag */ false));
+    container.appendChild(itemEl(p, items, {
+      placedInBag: false,
+      source: "tray",
+      locked: false,
+    }));
   }
+
+  wireDropTarget(container, (e) => {
+    const instanceId = e.dataTransfer.getData("text/instance-id");
+    if (!instanceId) return;
+    callbacks.onDrop?.(instanceId);
+  });
 }
 
-function itemEl(placement, items, placedInBag) {
+function itemEl(placement, items, opts) {
   const item = items[placement.itemId];
   const el = document.createElement("div");
   el.className = "item";
+  if (opts.locked) el.classList.add("locked");
   el.dataset.itemId = item.id;
   el.dataset.instanceId = placement.id;
   el.style.background = item.color;
-  el.title = item.name;
+  el.title = opts.locked
+    ? `${item.name} (clear items above first)`
+    : item.name;
 
-  if (placedInBag) {
+  if (opts.placedInBag) {
     el.style.gridColumn = `${placement.x + 1} / span ${item.footprint.w}`;
     el.style.gridRow = `${placement.y + 1} / span ${item.footprint.h}`;
   } else {
@@ -70,5 +105,61 @@ function itemEl(placement, items, placedInBag) {
   // Strength is intentionally NOT rendered: the player must infer fragility
   // from the item's identity (plan §2, §5).
 
+  if (!opts.locked) {
+    el.draggable = true;
+    el.addEventListener("dragstart", (e) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/instance-id", placement.id);
+      // Record where in the item the grab landed (in cell-widths from the
+      // left). The drop handler subtracts this so a wide item lands where
+      // the player aimed instead of having its left edge under the cursor.
+      const r = el.getBoundingClientRect();
+      const cellPx = r.width / item.footprint.w;
+      const colOffset = Math.max(0, Math.min(
+        item.footprint.w - 1,
+        Math.floor((e.clientX - r.left) / cellPx),
+      ));
+      e.dataTransfer.setData("text/col-offset", String(colOffset));
+      el.classList.add("dragging");
+    });
+    el.addEventListener("dragend", () => el.classList.remove("dragging"));
+  }
+
   return el;
+}
+
+// Helper: turn a drop event into a bag column. The bag is a CSS grid with
+// equal-width columns, but its borders count toward `rect.width` under
+// box-sizing: border-box, so we subtract them before dividing — otherwise
+// the rightmost ~4px of every column maps to the wrong index.
+function columnFromEvent(container, grid, e) {
+  const rect = container.getBoundingClientRect();
+  const style = getComputedStyle(container);
+  const borderL = parseFloat(style.borderLeftWidth) || 0;
+  const borderR = parseFloat(style.borderRightWidth) || 0;
+  const inner = rect.width - borderL - borderR;
+  const cellW = inner / grid.W;
+  const col = Math.floor((e.clientX - rect.left - borderL) / cellW);
+  return Math.max(0, Math.min(grid.W - 1, col));
+}
+
+function wireDropTarget(container, onDrop) {
+  container.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    container.classList.add("drag-over");
+  });
+  container.addEventListener("dragleave", (e) => {
+    // Only clear the highlight when the pointer actually leaves the
+    // container's subtree — `dragleave` also fires when crossing onto an
+    // inner element, which would otherwise flicker the highlight off and on.
+    if (!container.contains(e.relatedTarget)) {
+      container.classList.remove("drag-over");
+    }
+  });
+  container.addEventListener("drop", (e) => {
+    e.preventDefault();
+    container.classList.remove("drag-over");
+    onDrop(e);
+  });
 }
