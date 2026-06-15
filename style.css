@@ -113,3 +113,68 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 
 .bag.drag-over { background: #fff6dc; }
 .tray.drag-over { background: #e3e0d4; }
+
+/* --- Carry & result ----------------------------------------------------- */
+
+.carry-pane {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.carry-btn {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  background: var(--bag-border);
+  color: #fff;
+  border: 2px solid var(--bag-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.carry-btn:hover { background: #5a4e41; border-color: #5a4e41; }
+.carry-btn:active { transform: translateY(1px); }
+
+.result {
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #d8d3c5;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.result-score {
+  font-size: 16px;
+  font-weight: 600;
+}
+.result-breakdown {
+  margin-top: 4px;
+  color: var(--hint);
+  font-size: 12px;
+}
+
+/* A broken item: red outline + a hatched overlay so it reads as damaged
+ * even on top of the item's own colour. The overlay is a pseudo-element
+ * rather than a background-image because the inline `background: <color>`
+ * each item carries would otherwise win over a background-image rule. */
+.item.damaged {
+  outline: 2px solid #c0392b;
+  outline-offset: -2px;
+}
+.item.damaged::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(192, 57, 43, 0.55) 0,
+    rgba(192, 57, 43, 0.55) 4px,
+    rgba(0, 0, 0, 0) 4px,
+    rgba(0, 0, 0, 0) 10px
+  );
+}

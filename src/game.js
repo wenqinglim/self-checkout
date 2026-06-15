@@ -3,7 +3,12 @@
 
 import { ITEMS } from "../data/items.js";
 import { LEVELS } from "../data/levels.js";
-import { settle, isRemovable } from "./logic.js";
+import {
+  evaluateBreakage,
+  isRemovable,
+  settle,
+  survivalScore,
+} from "./logic.js";
 import { renderBag, renderTray } from "./render.js";
 
 const LEVEL = LEVELS[0];
@@ -15,17 +20,49 @@ const state = {
   grid: LEVEL.bag,
   bag: [],
   tray: LEVEL.tray.map((itemId, i) => ({ id: `t${i}-${itemId}`, itemId })),
+  // Populated by Carry, cleared on any subsequent placement edit. Holding it
+  // in state (rather than recomputing on every render) is what lets the
+  // damaged highlight persist after Carry until the player moves something.
+  carryResult: null, // { damagedIds: Set, score: number } | null
 };
 
 const bagEl = document.getElementById("bag");
 const trayEl = document.getElementById("tray");
+const carryBtn = document.getElementById("carry-btn");
+const resultEl = document.getElementById("result");
+const resultScoreEl = document.getElementById("result-score-value");
+const resultBreakdownEl = document.getElementById("result-breakdown");
 
 function render() {
-  renderBag(bagEl, state.grid, state.bag, ITEMS, {
+  const damagedIds = state.carryResult?.damagedIds ?? new Set();
+  renderBag(bagEl, state.grid, state.bag, ITEMS, damagedIds, {
     onDrop: handleDropOnBag,
     isRemovable: (p) => isRemovable(p, state.bag, ITEMS),
   });
   renderTray(trayEl, state.tray, ITEMS, { onDrop: handleDropOnTray });
+  renderResult();
+}
+
+function renderResult() {
+  if (!state.carryResult) {
+    resultEl.hidden = true;
+    resultBreakdownEl.textContent = "";
+    return;
+  }
+  const { damagedIds, score } = state.carryResult;
+  resultEl.hidden = false;
+  resultScoreEl.textContent = String(score);
+  const intact = state.bag.length - damagedIds.size;
+  const overflow = state.tray.length;
+  const parts = [`${intact} intact`, `${damagedIds.size} broken`];
+  if (overflow > 0) parts.push(`${overflow} left in tray`);
+  resultBreakdownEl.textContent = parts.join(" · ");
+}
+
+// Any change to the bag invalidates the Carry result; clear it so stale
+// damage highlights don't linger over a different arrangement.
+function invalidateCarryResult() {
+  state.carryResult = null;
 }
 
 // Look up an item by instance id in either pool. Returns { item, source }
@@ -66,6 +103,7 @@ function handleDropOnBag(instanceId, dropX) {
     const idx = state.bag.findIndex((p) => p.id === item.id);
     state.bag[idx] = settled;
   }
+  invalidateCarryResult();
   render();
 }
 
@@ -76,7 +114,17 @@ function handleDropOnTray(instanceId) {
 
   state.bag = state.bag.filter((p) => p.id !== instanceId);
   state.tray.push({ id: instanceId, itemId: found.item.itemId });
+  invalidateCarryResult();
   render();
 }
+
+function handleCarry() {
+  const { damagedIds } = evaluateBreakage(state.grid, state.bag, ITEMS);
+  const score = survivalScore(state.bag, damagedIds, ITEMS);
+  state.carryResult = { damagedIds, score };
+  render();
+}
+
+carryBtn.addEventListener("click", handleCarry);
 
 render();
