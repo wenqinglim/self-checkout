@@ -1,0 +1,104 @@
+:root {
+  --cell: 72px;
+  --bag-border: #6e6051;
+  --cell-line: #d9cdb4;
+  --bag-bg: #f5ecd5;
+  --tray-bg: #ecebe7;
+  --ink: #1f1d1a;
+  --hint: #5c5853;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 24px;
+  background: #fafaf7;
+  color: var(--ink);
+}
+
+header h1 { margin: 0 0 4px 0; font-size: 22px; }
+.hint { margin: 0 0 20px 0; color: var(--hint); font-size: 13px; }
+
+.play-area {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.bag-pane h2, .tray-pane h2 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hint);
+  margin: 0 0 8px 0;
+}
+
+/* --- Bag ---------------------------------------------------------------- */
+
+.bag {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--cell));
+  background: var(--bag-bg);
+  border: 3px solid var(--bag-border);
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  /* The bottom edge of the bag is "the floor" — make it visually heavier. */
+  border-bottom: 6px solid var(--bag-border);
+}
+
+.cell {
+  border-right: 1px solid var(--cell-line);
+  border-bottom: 1px solid var(--cell-line);
+}
+/* Trim the redundant outer cell borders so they don't double up on the bag. */
+.bag .cell:nth-child(var(--cols)) { /* no-op selector kept for readability */ }
+
+/* --- Tray --------------------------------------------------------------- */
+
+.tray {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--tray-bg);
+  border: 2px dashed #b8b3a6;
+  border-radius: 6px;
+  min-width: calc(var(--cell) * 2 + 24px);
+}
+
+/* --- Items -------------------------------------------------------------- */
+
+.item {
+  position: relative;
+  border-radius: 6px;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.15;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  user-select: none;
+}
+
+.item-label {
+  font-weight: 600;
+}
+
+.item-weight {
+  align-self: flex-end;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
