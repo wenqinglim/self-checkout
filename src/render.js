@@ -43,6 +43,7 @@ function itemEl(placement, items, placedInBag) {
   el.dataset.itemId = item.id;
   el.dataset.instanceId = placement.id;
   el.style.background = item.color;
+  el.title = item.name;
 
   if (placedInBag) {
     el.style.gridColumn = `${placement.x + 1} / span ${item.footprint.w}`;
@@ -54,9 +55,11 @@ function itemEl(placement, items, placedInBag) {
     el.style.height = `calc(var(--cell) * ${item.footprint.h})`;
   }
 
+  // Use the short `tag` in-cell — the full `name` wraps awkwardly on 1×1
+  // footprints. The full name is available on the wrapper's `title` attr.
   const label = document.createElement("div");
   label.className = "item-label";
-  label.textContent = item.name;
+  label.textContent = item.tag;
   el.appendChild(label);
 
   const weight = document.createElement("div");

@@ -54,8 +54,6 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   border-right: 1px solid var(--cell-line);
   border-bottom: 1px solid var(--cell-line);
 }
-/* Trim the redundant outer cell borders so they don't double up on the bag. */
-.bag .cell:nth-child(var(--cols)) { /* no-op selector kept for readability */ }
 
 /* --- Tray --------------------------------------------------------------- */
 

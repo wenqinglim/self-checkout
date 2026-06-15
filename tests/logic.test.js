@@ -36,6 +36,11 @@ function assertEq(a, b, msg) {
     throw new Error(`${msg || "expected equal"}: got ${a}, want ${b}`);
   }
 }
+function assertClose(a, b, msg, eps = 1e-9) {
+  if (typeof a !== "number" || typeof b !== "number" || Math.abs(a - b) > eps) {
+    throw new Error(`${msg || "expected close"}: got ${a}, want ~${b}`);
+  }
+}
 function assertSetEq(set, arr, msg) {
   const got = [...set].sort().join(",");
   const want = [...arr].sort().join(",");
@@ -76,7 +81,7 @@ test("eggs ON TOP of a watermelon: nothing is damaged", () => {
   assertSetEq(damagedIds, [], "no damage");
 });
 
-test("cereal box (w=4) on two 1x1 items: each sees load 2", () => {
+test("cereal box (w=2) on two 1x1 items: each sees load 2", () => {
   const grid = { W: 2, H: 2 };
   const placements = [
     { id: "cer", itemId: "cereal", x: 0, y: 0 },
@@ -155,6 +160,22 @@ test("cereal bridging a gap: one col carries load past the empty cell", () => {
   const { loads, damagedIds } = evaluateBreakage(grid, placements, ITEMS);
   assertEq(loads["c1"], 2);
   assertSetEq(damagedIds, []);
+});
+
+test("fractional passDown: bread under a jar splits 9/2 = 4.5 per col", () => {
+  // Jar weight 7 sits on bread (2x1, weight 2). Bread sees loadFromAbove
+  // 7 + 0 = 7 (and breaks: 7*1.5 = 10.5 > 5 strength), then passes
+  // (7 + 2) / 2 = 4.5 down each column. A 1x1 can under the right column
+  // therefore sees exactly 4.5.
+  const grid = { W: 2, H: 3 };
+  const placements = [
+    { id: "j",   itemId: "jar",    x: 0, y: 0 },
+    { id: "br",  itemId: "bread",  x: 0, y: 1 },
+    { id: "can", itemId: "canned", x: 1, y: 2 },
+  ];
+  const { damagedIds, loads } = evaluateBreakage(grid, placements, ITEMS);
+  assertClose(loads["can"], 4.5, "fractional load arrives intact");
+  assertSetEq(damagedIds, ["br"], "only bread broken");
 });
 
 test("two same-row items don't influence each other (no shared columns)", () => {

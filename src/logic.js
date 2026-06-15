@@ -30,7 +30,9 @@ function cellsOf(placement, items) {
 function occupiedKeys(placements, items, excludeId = null) {
   const set = new Set();
   for (const p of placements) {
-    if (excludeId !== null && p.id === excludeId) continue;
+    // `!=` (not `!==`) so we skip both an explicit null sentinel and an
+    // undefined id — tray-drag candidates won't have an id yet.
+    if (excludeId != null && p.id === excludeId) continue;
     for (const [cx, cy] of cellsOf(p, items)) set.add(`${cx},${cy}`);
   }
   return set;
