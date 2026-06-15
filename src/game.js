@@ -3,7 +3,7 @@
 
 import { ITEMS } from "../data/items.js";
 import { LEVELS } from "../data/levels.js";
-import { settle, canPlace, isRemovable } from "./logic.js";
+import { settle, isRemovable } from "./logic.js";
 import { renderBag, renderTray } from "./render.js";
 
 const LEVEL = LEVELS[0];
@@ -46,12 +46,18 @@ function handleDropOnBag(instanceId, dropX) {
   // Items inside the bag must be removable before they can be repositioned.
   if (source === "bag" && !isRemovable(item, state.bag, ITEMS)) return;
 
-  // Both settle and canPlace exclude the candidate's own cells by id, so a
-  // bag→bag reposition can pass state.bag through unchanged.
-  const candidate = { id: item.id, itemId: item.itemId, x: dropX };
+  // Clamp the drop column so a wide item released near the right edge
+  // snaps flush right instead of being silently rejected by settle.
+  const w = ITEMS[item.itemId].footprint.w;
+  const clampedX = Math.max(0, Math.min(state.grid.W - w, dropX));
+
+  // settle excludes the candidate's own cells by id, so a bag→bag reposition
+  // can pass state.bag through unchanged. It is the sole authority on legal
+  // placement — if it returns a result, the result is in-bounds and
+  // overlap-free by construction.
+  const candidate = { id: item.id, itemId: item.itemId, x: clampedX };
   const settled = settle(state.grid, state.bag, ITEMS, candidate);
-  if (!settled) return; // overflow or no room — silent reject for now.
-  if (!canPlace(state.grid, state.bag, ITEMS, settled)) return;
+  if (!settled) return; // no vertical room — silent reject.
 
   if (source === "tray") {
     state.tray = state.tray.filter((p) => p.id !== item.id);

@@ -37,8 +37,14 @@ export function renderBag(container, grid, placements, items, callbacks = {}) {
   wireDropTarget(container, (e) => {
     const instanceId = e.dataTransfer.getData("text/instance-id");
     if (!instanceId) return;
-    const dropX = columnFromEvent(container, grid, e);
-    callbacks.onDrop?.(instanceId, dropX);
+    const rawCol = columnFromEvent(container, grid, e);
+    // Subtract the cursor-offset captured at dragstart so the item drops
+    // where the player aimed — i.e. the cursor stays anchored on the same
+    // sub-cell of a wide item from grab to release.
+    const colOffset = parseInt(
+      e.dataTransfer.getData("text/col-offset") || "0", 10,
+    );
+    callbacks.onDrop?.(instanceId, rawCol - colOffset);
   });
 }
 
@@ -104,7 +110,16 @@ function itemEl(placement, items, opts) {
     el.addEventListener("dragstart", (e) => {
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/instance-id", placement.id);
-      e.dataTransfer.setData("text/source", opts.source);
+      // Record where in the item the grab landed (in cell-widths from the
+      // left). The drop handler subtracts this so a wide item lands where
+      // the player aimed instead of having its left edge under the cursor.
+      const r = el.getBoundingClientRect();
+      const cellPx = r.width / item.footprint.w;
+      const colOffset = Math.max(0, Math.min(
+        item.footprint.w - 1,
+        Math.floor((e.clientX - r.left) / cellPx),
+      ));
+      e.dataTransfer.setData("text/col-offset", String(colOffset));
       el.classList.add("dragging");
     });
     el.addEventListener("dragend", () => el.classList.remove("dragging"));
@@ -114,11 +129,17 @@ function itemEl(placement, items, opts) {
 }
 
 // Helper: turn a drop event into a bag column. The bag is a CSS grid with
-// equal-width columns, so we read the container's width and divide.
+// equal-width columns, but its borders count toward `rect.width` under
+// box-sizing: border-box, so we subtract them before dividing — otherwise
+// the rightmost ~4px of every column maps to the wrong index.
 function columnFromEvent(container, grid, e) {
   const rect = container.getBoundingClientRect();
-  const cellW = rect.width / grid.W;
-  const col = Math.floor((e.clientX - rect.left) / cellW);
+  const style = getComputedStyle(container);
+  const borderL = parseFloat(style.borderLeftWidth) || 0;
+  const borderR = parseFloat(style.borderRightWidth) || 0;
+  const inner = rect.width - borderL - borderR;
+  const cellW = inner / grid.W;
+  const col = Math.floor((e.clientX - rect.left - borderL) / cellW);
   return Math.max(0, Math.min(grid.W - 1, col));
 }
 
@@ -130,8 +151,11 @@ function wireDropTarget(container, onDrop) {
   });
   container.addEventListener("dragleave", (e) => {
     // Only clear the highlight when the pointer actually leaves the
-    // container, not when it crosses an inner element.
-    if (e.target === container) container.classList.remove("drag-over");
+    // container's subtree — `dragleave` also fires when crossing onto an
+    // inner element, which would otherwise flicker the highlight off and on.
+    if (!container.contains(e.relatedTarget)) {
+      container.classList.remove("drag-over");
+    }
   });
   container.addEventListener("drop", (e) => {
     e.preventDefault();
