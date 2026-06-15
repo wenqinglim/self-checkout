@@ -6,6 +6,10 @@
 // load on any item is its loadFromAbove multiplied by this factor.
 export const CARRY_FACTOR = 1.5;
 
+// Default ceiling for the per-level time bonus. Levels may override via
+// their own `timeBonusMax` field; `timeDecay` is always per-level.
+export const TIME_BONUS_MAX = 100;
+
 // ---------- Placements & occupancy ------------------------------------------
 
 // A placement is { id, itemId, x, y } where (x, y) is the top-left cell of
@@ -159,4 +163,17 @@ export function survivalScore(placements, damagedIds, items) {
     if (!damagedIds.has(p.id)) total += items[p.itemId].value;
   }
   return total;
+}
+
+// Decaying time bonus: starts at `max` and shrinks linearly at `decay` points
+// per second, floored at 0. Rewards finishing fast without subtracting from
+// the survival score when the player is slow (plan §8).
+export function timeBonus(max, decay, secondsElapsed) {
+  return Math.max(0, max - decay * secondsElapsed);
+}
+
+// Final score = survival + time bonus. Kept separate from `survivalScore`
+// so the breakdown is available to the UI.
+export function finalScore(survival, bonus) {
+  return survival + bonus;
 }

@@ -5,13 +5,16 @@ import { ITEMS } from "../data/items.js";
 import { LEVELS } from "../data/levels.js";
 import {
   evaluateBreakage,
+  finalScore,
   isRemovable,
   settle,
   survivalScore,
+  timeBonus,
 } from "./logic.js";
 import { renderBag, renderTray } from "./render.js";
 
 const LEVEL = LEVELS[0];
+const CLOCK_TICK_MS = 250;
 
 // Seed mutable state from level data. Tray items each get a unique instance id
 // so we can refer to them across re-renders even when the same item type
@@ -23,7 +26,13 @@ const state = {
   // Populated by Carry, cleared on any subsequent placement edit. Holding it
   // in state (rather than recomputing on every render) is what lets the
   // damaged highlight persist after Carry until the player moves something.
-  carryResult: null, // { damagedIds: Set, score: number } | null
+  carryResult: null, // { damagedIds, survival, bonus, final } | null
+  // ms timestamp of the player's first drag; null before any drag. The clock
+  // never resets across retries — that's what makes time the real cost of
+  // unlimited do-overs (plan §8).
+  clockStartedAt: null,
+  // True once Carry produces final >= threshold. Locks all interactions.
+  won: false,
 };
 
 const bagEl = document.getElementById("bag");
@@ -32,15 +41,25 @@ const carryBtn = document.getElementById("carry-btn");
 const resultEl = document.getElementById("result");
 const resultScoreEl = document.getElementById("result-score-value");
 const resultBreakdownEl = document.getElementById("result-breakdown");
+const clockEl = document.getElementById("clock");
+const winBannerEl = document.getElementById("win-banner");
 
 function render() {
   renderBag(bagEl, state.grid, state.bag, ITEMS, {
     onDrop: handleDropOnBag,
-    isRemovable: (p) => isRemovable(p, state.bag, ITEMS),
+    // After winning, nothing is draggable: clicking around shouldn't be able
+    // to modify a cleared level.
+    isRemovable: (p) => !state.won && isRemovable(p, state.bag, ITEMS),
     damagedIds: state.carryResult?.damagedIds,
+    onDragStart: startClockIfNeeded,
   });
-  renderTray(trayEl, state.tray, ITEMS, { onDrop: handleDropOnTray });
+  renderTray(trayEl, state.tray, ITEMS, {
+    onDrop: handleDropOnTray,
+    onDragStart: startClockIfNeeded,
+  });
   renderResult();
+  renderWinBanner();
+  carryBtn.disabled = state.won;
 }
 
 function renderResult() {
@@ -49,14 +68,24 @@ function renderResult() {
     resultBreakdownEl.textContent = "";
     return;
   }
-  const { damagedIds, score } = state.carryResult;
+  const { damagedIds, survival, bonus, final } = state.carryResult;
   resultEl.hidden = false;
-  resultScoreEl.textContent = String(score);
+  resultScoreEl.textContent = String(Math.round(final));
   const intact = state.bag.length - damagedIds.size;
   const overflow = state.tray.length;
-  const parts = [`${intact} intact`, `${damagedIds.size} broken`];
+  const parts = [
+    `survival ${survival}`,
+    `time bonus ${Math.round(bonus)}`,
+    `${intact} intact`,
+    `${damagedIds.size} broken`,
+  ];
   if (overflow > 0) parts.push(`${overflow} left in tray`);
+  parts.push(`threshold ${LEVEL.threshold}`);
   resultBreakdownEl.textContent = parts.join(" · ");
+}
+
+function renderWinBanner() {
+  winBannerEl.hidden = !state.won;
 }
 
 // Any change to the bag invalidates the Carry result; clear it so stale
@@ -119,12 +148,40 @@ function handleDropOnTray(instanceId) {
 }
 
 function handleCarry() {
+  if (state.won) return;
   const { damagedIds } = evaluateBreakage(state.grid, state.bag, ITEMS);
-  const score = survivalScore(state.bag, damagedIds, ITEMS);
-  state.carryResult = { damagedIds, score };
+  const survival = survivalScore(state.bag, damagedIds, ITEMS);
+  const bonus = timeBonus(
+    LEVEL.timeBonusMax,
+    LEVEL.timeDecay,
+    elapsedSeconds(),
+  );
+  const final = finalScore(survival, bonus);
+  state.carryResult = { damagedIds, survival, bonus, final };
+  if (final >= LEVEL.threshold) state.won = true;
   render();
+}
+
+// ---- Clock -----------------------------------------------------------------
+
+function elapsedSeconds() {
+  if (state.clockStartedAt == null) return 0;
+  return (Date.now() - state.clockStartedAt) / 1000;
+}
+
+function tickClock() {
+  clockEl.textContent = `${elapsedSeconds().toFixed(1)}s`;
+}
+
+let clockInterval = null;
+function startClockIfNeeded() {
+  if (state.clockStartedAt != null) return;
+  state.clockStartedAt = Date.now();
+  tickClock();
+  clockInterval = setInterval(tickClock, CLOCK_TICK_MS);
 }
 
 carryBtn.addEventListener("click", handleCarry);
 
+tickClock();
 render();

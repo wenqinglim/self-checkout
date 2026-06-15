@@ -5,11 +5,14 @@
 
 import {
   CARRY_FACTOR,
+  TIME_BONUS_MAX,
   canPlace,
   isRemovable,
   evaluateBreakage,
+  finalScore,
   settle,
   survivalScore,
+  timeBonus,
 } from "../src/logic.js";
 import { ITEMS } from "../data/items.js";
 
@@ -353,6 +356,29 @@ test("survivalScore: damaged items contribute 0; intact items contribute value",
   const damaged = new Set(["e1"]);
   const score = survivalScore(placements, damaged, ITEMS);
   assertEq(score, 40);
+});
+
+// --- Timer & final score -------------------------------------------------
+
+test("TIME_BONUS_MAX is 100", () => assertEq(TIME_BONUS_MAX, 100));
+
+test("timeBonus: full bonus at t=0", () => {
+  assertEq(timeBonus(100, 1.0, 0), 100);
+});
+
+test("timeBonus: decays linearly", () => {
+  assertClose(timeBonus(100, 1.0, 25), 75);
+  assertClose(timeBonus(100, 2.0, 10), 80);
+});
+
+test("timeBonus: floors at zero (never negative)", () => {
+  assertEq(timeBonus(100, 1.0, 200), 0);
+  assertEq(timeBonus(100, 1.0, 100), 0);
+});
+
+test("finalScore: sums survival and bonus", () => {
+  assertEq(finalScore(40, 60), 100);
+  assertEq(finalScore(0, 0), 0);
 });
 
 // --- Report -------------------------------------------------------------

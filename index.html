@@ -13,6 +13,10 @@
         Drag items from the tray into the bag. Items snap to the grid and
         settle on top of whatever's below. Weight is shown; strength is not.
       </p>
+      <div class="clock-row">
+        <span class="clock-label">Time</span>
+        <span id="clock" class="clock-value">0.0s</span>
+      </div>
     </header>
 
     <main class="play-area">
@@ -30,6 +34,9 @@
               Score: <span id="result-score-value">0</span>
             </div>
             <div id="result-breakdown" class="result-breakdown"></div>
+          </div>
+          <div id="win-banner" class="win-banner" hidden>
+            Level cleared!
           </div>
         </div>
       </section>
