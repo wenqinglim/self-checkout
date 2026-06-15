@@ -8,6 +8,7 @@ import {
   canPlace,
   isRemovable,
   evaluateBreakage,
+  settle,
   survivalScore,
 } from "../src/logic.js";
 import { ITEMS } from "../data/items.js";
@@ -272,6 +273,73 @@ test("isRemovable: same-row neighbour does NOT lock", () => {
   ];
   assert(isRemovable(placements[0], placements, ITEMS));
   assert(isRemovable(placements[1], placements, ITEMS));
+});
+
+// --- Settling ------------------------------------------------------------
+
+test("settle: a single item drops to the floor on an empty bag", () => {
+  const grid = { W: 4, H: 6 };
+  const result = settle(grid, [], ITEMS, { id: "x", itemId: "watermelon", x: 0 });
+  // Watermelon is 2x2 in a 4x6 bag → bottom at row 5 ⇒ top y = 4.
+  assertEq(result.y, 4);
+});
+
+test("settle: stacks on top of an existing item in the same column", () => {
+  const grid = { W: 2, H: 6 };
+  const existing = [{ id: "c1", itemId: "canned", x: 0, y: 5 }];
+  const result = settle(grid, existing, ITEMS, {
+    id: "c2", itemId: "canned", x: 0,
+  });
+  // Lands on row 4, directly above the existing can.
+  assertEq(result.y, 4);
+});
+
+test("settle: wide item rests on the highest surface across its span", () => {
+  // A can in col 2 row 5, col 1 empty. Bread (2x1) at x=1 spans cols 1 & 2.
+  // It rests on the can's top (row 5), hovering above empty col 1 — rigid.
+  const grid = { W: 4, H: 6 };
+  const existing = [{ id: "c1", itemId: "canned", x: 2, y: 5 }];
+  const result = settle(grid, existing, ITEMS, {
+    id: "br", itemId: "bread", x: 1,
+  });
+  assertEq(result.y, 4);
+});
+
+test("settle: rejects horizontal overflow", () => {
+  const grid = { W: 4, H: 6 };
+  // Watermelon is 2 wide; dropping at x=3 would overflow into col 4.
+  assertEq(
+    settle(grid, [], ITEMS, { id: "x", itemId: "watermelon", x: 3 }),
+    null,
+  );
+  assertEq(
+    settle(grid, [], ITEMS, { id: "x", itemId: "watermelon", x: -1 }),
+    null,
+  );
+});
+
+test("settle: rejects when a column has no vertical room left", () => {
+  // Fill col 0 of a 1-wide bag completely; a chip can't fit anywhere.
+  const grid = { W: 1, H: 2 };
+  const existing = [
+    { id: "a", itemId: "canned", x: 0, y: 0 },
+    { id: "b", itemId: "canned", x: 0, y: 1 },
+  ];
+  assertEq(
+    settle(grid, existing, ITEMS, { id: "x", itemId: "chips", x: 0 }),
+    null,
+  );
+});
+
+test("settle: excludes the candidate's own cells when repositioning", () => {
+  // Pretend an existing can at (0,5) is being dragged: settling it at x=0
+  // should still resolve to y=5 (the floor), not stack on itself.
+  const grid = { W: 1, H: 6 };
+  const existing = [{ id: "c1", itemId: "canned", x: 0, y: 5 }];
+  const result = settle(grid, existing, ITEMS, {
+    id: "c1", itemId: "canned", x: 0,
+  });
+  assertEq(result.y, 5);
 });
 
 // --- Scoring -------------------------------------------------------------

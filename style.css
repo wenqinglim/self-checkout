@@ -100,3 +100,16 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   padding: 1px 5px;
   border-radius: 3px;
 }
+
+/* --- Drag affordances --------------------------------------------------- */
+
+.item[draggable="true"] { cursor: grab; }
+.item[draggable="true"]:active { cursor: grabbing; }
+.item.locked {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+.item.dragging { opacity: 0.5; }
+
+.bag.drag-over { background: #fff6dc; }
+.tray.drag-over { background: #e3e0d4; }

@@ -55,6 +55,41 @@ export function canPlace(grid, placements, items, candidate) {
   return true;
 }
 
+// ---------- Settling --------------------------------------------------------
+
+// Given a candidate item and the column `x` it was dropped at, return the
+// placement { x, y, itemId, id } where it lands — bottom edge resting on the
+// highest occupied surface within its column span, or on the floor.
+//
+// Returns null if `x` is out of range or there isn't enough vertical room for
+// the item to fit (a column under it is already full to the ceiling).
+//
+// The candidate may already be in `placements` (when repositioning an item
+// inside the bag); pass its id so its own cells are excluded from occupancy.
+export function settle(grid, placements, items, candidate) {
+  const { w, h } = footprintOf(candidate, items);
+  if (candidate.x < 0 || candidate.x + w > grid.W) return null;
+
+  // For each column the item spans, find the topmost occupied row (smallest
+  // y where the column has any occupied cell). If the column is empty, the
+  // top is the floor (grid.H). The item is rigid: it rests on whichever
+  // column's top is highest.
+  const occupied = occupiedKeys(placements, items, candidate.id);
+  let restY = grid.H;
+  for (let dx = 0; dx < w; dx++) {
+    const col = candidate.x + dx;
+    let colTop = grid.H;
+    for (let y = 0; y < grid.H; y++) {
+      if (occupied.has(`${col},${y}`)) { colTop = y; break; }
+    }
+    if (colTop < restY) restY = colTop;
+  }
+
+  const y = restY - h;
+  if (y < 0) return null;
+  return { ...candidate, y };
+}
+
 // ---------- Removability lock -----------------------------------------------
 
 // An item is "locked" — i.e. not removable — if any cell directly above its
