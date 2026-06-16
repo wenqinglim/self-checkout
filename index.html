@@ -13,6 +13,10 @@
         Drag items from the tray into the bag. Items snap to the grid and
         settle on top of whatever's below. Weight is shown; strength is not.
       </p>
+      <div class="level-row">
+        <span class="level-label">Level</span>
+        <span id="level-name" class="level-name"></span>
+      </div>
       <div class="clock-row">
         <span class="clock-label">Time</span>
         <span id="clock" class="clock-value">0.0s</span>
@@ -36,7 +40,10 @@
             <div id="result-breakdown" class="result-breakdown"></div>
           </div>
           <div id="win-banner" class="win-banner" hidden>
-            Level cleared!
+            <span id="win-banner-text">Level cleared!</span>
+            <button type="button" id="next-level-btn" class="next-level-btn" hidden>
+              Next level
+            </button>
           </div>
         </div>
       </section>

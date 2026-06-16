@@ -13,27 +13,50 @@ import {
 } from "./logic.js";
 import { renderBag, renderTray } from "./render.js";
 
-const LEVEL = LEVELS[0];
 const CLOCK_TICK_MS = 250;
 
-// Seed mutable state from level data. Tray items each get a unique instance id
-// so we can refer to them across re-renders even when the same item type
-// appears more than once.
+// Mutable state. `levelIndex` indirects through LEVELS so loadLevel can reset
+// the per-level slice (bag/tray/carry/clock/won) when the player advances.
+// Tray items each get a unique instance id so we can refer to them across
+// re-renders even when the same item type appears more than once.
 const state = {
-  grid: LEVEL.bag,
+  levelIndex: 0,
+  grid: null,
   bag: [],
-  tray: LEVEL.tray.map((itemId, i) => ({ id: `t${i}-${itemId}`, itemId })),
+  tray: [],
   // Populated by Carry, cleared on any subsequent placement edit. Holding it
   // in state (rather than recomputing on every render) is what lets the
   // damaged highlight persist after Carry until the player moves something.
   carryResult: null, // { damagedIds, survival, bonus, final } | null
-  // ms timestamp of the player's first drag; null before any drag. The clock
-  // never resets across retries — that's what makes time the real cost of
-  // unlimited do-overs (plan §8).
+  // ms timestamp of the player's first drag in the current level; null before
+  // any drag. The clock never resets across retries within a level — that's
+  // what makes time the real cost of unlimited do-overs (plan §8) — but it
+  // does reset on level transition because each level has its own time tuning.
   clockStartedAt: null,
-  // True once Carry produces final >= threshold. Locks all interactions.
+  // True once Carry produces final >= threshold. Locks all interactions until
+  // the player advances to the next level.
   won: false,
 };
+
+function currentLevel() {
+  return LEVELS[state.levelIndex];
+}
+
+function loadLevel(idx) {
+  state.levelIndex = idx;
+  const level = currentLevel();
+  state.grid = level.bag;
+  state.bag = [];
+  state.tray = level.tray.map((itemId, i) => ({ id: `t${i}-${itemId}`, itemId }));
+  state.carryResult = null;
+  state.clockStartedAt = null;
+  state.won = false;
+  if (clockInterval != null) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+  tickClock();
+}
 
 const bagEl = document.getElementById("bag");
 const trayEl = document.getElementById("tray");
@@ -43,6 +66,9 @@ const resultScoreEl = document.getElementById("result-score-value");
 const resultBreakdownEl = document.getElementById("result-breakdown");
 const clockEl = document.getElementById("clock");
 const winBannerEl = document.getElementById("win-banner");
+const winBannerTextEl = document.getElementById("win-banner-text");
+const nextLevelBtn = document.getElementById("next-level-btn");
+const levelNameEl = document.getElementById("level-name");
 
 function render() {
   renderBag(bagEl, state.grid, state.bag, ITEMS, {
@@ -62,6 +88,7 @@ function render() {
   });
   renderResult();
   renderWinBanner();
+  renderLevelName();
   carryBtn.disabled = state.won;
 }
 
@@ -85,12 +112,22 @@ function renderResult() {
     `${damagedIds.size} broken`,
   ];
   if (overflow > 0) parts.push(`${overflow} left in tray`);
-  parts.push(`threshold ${LEVEL.threshold}`);
+  parts.push(`threshold ${currentLevel().threshold}`);
   resultBreakdownEl.textContent = parts.join(" · ");
 }
 
 function renderWinBanner() {
   winBannerEl.hidden = !state.won;
+  if (!state.won) return;
+  const hasNext = state.levelIndex < LEVELS.length - 1;
+  winBannerTextEl.textContent = hasNext
+    ? "Level cleared!"
+    : "All levels cleared!";
+  nextLevelBtn.hidden = !hasNext;
+}
+
+function renderLevelName() {
+  levelNameEl.textContent = currentLevel().name;
 }
 
 // Any change to the bag invalidates the Carry result; clear it so stale
@@ -156,11 +193,12 @@ function handleDropOnTray(instanceId) {
 
 function handleCarry() {
   if (state.won) return;
+  const level = currentLevel();
   const { damagedIds } = evaluateBreakage(state.grid, state.bag, ITEMS);
   const survival = survivalScore(state.bag, damagedIds, ITEMS);
   const bonus = timeBonus(
-    LEVEL.timeBonusMax,
-    LEVEL.timeDecay,
+    level.timeBonusMax,
+    level.timeDecay,
     elapsedSeconds(),
   );
   // Round at compute time so the displayed score and the threshold gate
@@ -172,10 +210,16 @@ function handleCarry() {
   // An empty bag yielding final = bonus is not a win — the player hasn't
   // packed anything. Without this gate, Carry-as-first-action would clear
   // the level for free (bonus 100 >= threshold 80).
-  if (final >= LEVEL.threshold && state.bag.length > 0) {
+  if (final >= level.threshold && state.bag.length > 0) {
     state.won = true;
     freezeClock();
   }
+  render();
+}
+
+function handleNextLevel() {
+  if (state.levelIndex >= LEVELS.length - 1) return;
+  loadLevel(state.levelIndex + 1);
   render();
 }
 
@@ -210,6 +254,7 @@ function freezeClock() {
 }
 
 carryBtn.addEventListener("click", handleCarry);
+nextLevelBtn.addEventListener("click", handleNextLevel);
 
-tickClock();
+loadLevel(0);
 render();

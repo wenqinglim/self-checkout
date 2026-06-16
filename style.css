@@ -21,21 +21,27 @@ body {
 header h1 { margin: 0 0 4px 0; font-size: 22px; }
 .hint { margin: 0 0 12px 0; color: var(--hint); font-size: 13px; }
 
+.level-row,
 .clock-row {
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
-  margin: 0 0 20px 0;
+  margin: 0 8px 20px 0;
   padding: 6px 10px;
   background: #fff;
   border: 1px solid #d8d3c5;
   border-radius: 4px;
 }
+.level-label,
 .clock-label {
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--hint);
+}
+.level-name {
+  font-weight: 600;
+  font-size: 14px;
 }
 .clock-value {
   font-variant-numeric: tabular-nums;
@@ -185,6 +191,9 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 }
 
 .win-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
   background: #2e7d32;
   color: #fff;
@@ -192,6 +201,21 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   font-weight: 600;
   letter-spacing: 0.03em;
 }
+
+.next-level-btn {
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  background: #fff;
+  color: #2e7d32;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.next-level-btn:hover { background: #e8f5e9; }
+.next-level-btn:active { transform: translateY(1px); }
 
 .carry-btn:disabled {
   opacity: 0.5;

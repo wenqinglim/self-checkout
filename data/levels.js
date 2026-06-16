@@ -21,4 +21,22 @@ export const LEVELS = [
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
+  {
+    id: 2,
+    name: "Width",
+    bag: { W: 4, H: 6 },
+    tray: [
+      "watermelon",
+      "cereal",
+      "cereal",
+      "bread",
+      "canned",
+      "canned",
+      "soda",
+      "chips",
+    ],
+    threshold: 100,
+    timeBonusMax: 100,
+    timeDecay: 1.0,
+  },
 ];
