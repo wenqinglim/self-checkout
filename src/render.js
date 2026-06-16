@@ -6,7 +6,9 @@
 // when an item is dropped on the bag. `callbacks.isRemovable(placement)`
 // is asked to decide if a bag item is draggable. `callbacks.damagedIds`
 // is an optional Set of placement ids to render with the broken-item
-// treatment (post-Carry).
+// treatment (post-Carry). `callbacks.onDragStart()` fires once per
+// dragstart — used by the controller to start the level clock on the
+// player's first interaction (plan §8).
 export function renderBag(container, grid, placements, items, callbacks = {}) {
   const damagedIds = callbacks.damagedIds ?? new Set();
   container.innerHTML = "";
@@ -35,6 +37,7 @@ export function renderBag(container, grid, placements, items, callbacks = {}) {
       source: "bag",
       locked,
       damaged: damagedIds.has(p.id),
+      onDragStart: callbacks.onDragStart,
     }));
   }
 
@@ -54,14 +57,21 @@ export function renderBag(container, grid, placements, items, callbacks = {}) {
 
 // Draws the unplaced (tray) items into `container` as a flat list.
 // Each tray item keeps its real footprint so the player can read its size.
+// `callbacks.isRemovable(placement)` is optional: tray items are removable
+// by default, but the controller uses this hook to lock the tray after the
+// level is won.
 export function renderTray(container, trayPlacements, items, callbacks = {}) {
   container.innerHTML = "";
   container.classList.add("tray");
   for (const p of trayPlacements) {
+    const locked = callbacks.isRemovable
+      ? !callbacks.isRemovable(p)
+      : false;
     container.appendChild(itemEl(p, items, {
       placedInBag: false,
       source: "tray",
-      locked: false,
+      locked,
+      onDragStart: callbacks.onDragStart,
     }));
   }
 
@@ -126,6 +136,7 @@ function itemEl(placement, items, opts) {
       ));
       e.dataTransfer.setData("text/col-offset", String(colOffset));
       el.classList.add("dragging");
+      opts.onDragStart?.();
     });
     el.addEventListener("dragend", () => el.classList.remove("dragging"));
   }
