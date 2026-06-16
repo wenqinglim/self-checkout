@@ -201,6 +201,13 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   font-weight: 600;
   letter-spacing: 0.03em;
 }
+/* `.win-banner { display: flex }` has the same specificity (0,0,1,0) as the
+ * UA's `[hidden] { display: none }`, and the author rule wins by cascade
+ * order — so without this, `winBannerEl.hidden = true` had no visual effect
+ * and the green banner stayed up across level transitions. */
+.win-banner[hidden] {
+  display: none;
+}
 
 .next-level-btn {
   font: inherit;
