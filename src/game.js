@@ -56,6 +56,9 @@ function render() {
   renderTray(trayEl, state.tray, ITEMS, {
     onDrop: handleDropOnTray,
     onDragStart: startClockIfNeeded,
+    // Tray items are inherently removable, but the post-win lock still
+    // applies: after winning, nothing in the tray should be draggable.
+    isRemovable: () => !state.won,
   });
   renderResult();
   renderWinBanner();
@@ -70,7 +73,9 @@ function renderResult() {
   }
   const { damagedIds, survival, bonus, final } = state.carryResult;
   resultEl.hidden = false;
-  resultScoreEl.textContent = String(Math.round(final));
+  // `final` is already rounded at compute time so display and the
+  // threshold check stay consistent (no "Score: 80 but didn't win").
+  resultScoreEl.textContent = String(final);
   const intact = state.bag.length - damagedIds.size;
   const overflow = state.tray.length;
   const parts = [
@@ -105,6 +110,7 @@ function findInstance(instanceId) {
 }
 
 function handleDropOnBag(instanceId, dropX) {
+  if (state.won) return;
   const found = findInstance(instanceId);
   if (!found) return;
   const { item, source } = found;
@@ -137,6 +143,7 @@ function handleDropOnBag(instanceId, dropX) {
 }
 
 function handleDropOnTray(instanceId) {
+  if (state.won) return;
   const found = findInstance(instanceId);
   if (!found || found.source !== "bag") return;
   if (!isRemovable(found.item, state.bag, ITEMS)) return;
@@ -156,9 +163,19 @@ function handleCarry() {
     LEVEL.timeDecay,
     elapsedSeconds(),
   );
-  const final = finalScore(survival, bonus);
+  // Round at compute time so the displayed score and the threshold gate
+  // agree to the integer. Storing the raw float bit us before: a final of
+  // 79.6 would render as "Score: 80" next to "threshold 80" but still fail
+  // the (final >= threshold) check.
+  const final = Math.round(finalScore(survival, bonus));
   state.carryResult = { damagedIds, survival, bonus, final };
-  if (final >= LEVEL.threshold) state.won = true;
+  // An empty bag yielding final = bonus is not a win — the player hasn't
+  // packed anything. Without this gate, Carry-as-first-action would clear
+  // the level for free (bonus 100 >= threshold 80).
+  if (final >= LEVEL.threshold && state.bag.length > 0) {
+    state.won = true;
+    freezeClock();
+  }
   render();
 }
 
@@ -179,6 +196,17 @@ function startClockIfNeeded() {
   state.clockStartedAt = Date.now();
   tickClock();
   clockInterval = setInterval(tickClock, CLOCK_TICK_MS);
+}
+
+// Stop the ticking display once the level is won. The frozen chip shows
+// the elapsed time at the moment of the winning Carry — there is no
+// further score to lose by waiting.
+function freezeClock() {
+  if (clockInterval != null) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+  tickClock();
 }
 
 carryBtn.addEventListener("click", handleCarry);

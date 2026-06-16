@@ -57,14 +57,20 @@ export function renderBag(container, grid, placements, items, callbacks = {}) {
 
 // Draws the unplaced (tray) items into `container` as a flat list.
 // Each tray item keeps its real footprint so the player can read its size.
+// `callbacks.isRemovable(placement)` is optional: tray items are removable
+// by default, but the controller uses this hook to lock the tray after the
+// level is won.
 export function renderTray(container, trayPlacements, items, callbacks = {}) {
   container.innerHTML = "";
   container.classList.add("tray");
   for (const p of trayPlacements) {
+    const locked = callbacks.isRemovable
+      ? !callbacks.isRemovable(p)
+      : false;
     container.appendChild(itemEl(p, items, {
       placedInBag: false,
       source: "tray",
-      locked: false,
+      locked,
       onDragStart: callbacks.onDragStart,
     }));
   }
