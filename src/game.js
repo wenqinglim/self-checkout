@@ -47,7 +47,14 @@ function loadLevel(idx) {
   const level = currentLevel();
   state.grid = level.bag;
   state.bag = [];
-  state.tray = level.tray.map((itemId, i) => ({ id: `t${i}-${itemId}`, itemId }));
+  // Prefix instance ids with the level index so they don't collide across
+  // levels. Nothing today carries placements across boundaries (loadLevel
+  // wipes both pools), but anything later that does — undo, replay, analytics,
+  // persisted progress — would silently alias `t0-watermelon` between levels.
+  state.tray = level.tray.map((itemId, i) => ({
+    id: `L${idx}-t${i}-${itemId}`,
+    itemId,
+  }));
   state.carryResult = null;
   state.clockStartedAt = null;
   state.won = false;
@@ -118,7 +125,14 @@ function renderResult() {
 
 function renderWinBanner() {
   winBannerEl.hidden = !state.won;
-  if (!state.won) return;
+  if (!state.won) {
+    // Reset explicitly rather than relying on the parent banner's `hidden`
+    // cascade — otherwise the button's own `hidden` flag stays stale from a
+    // previous win and would re-appear if the banner is ever hidden via a
+    // different mechanism, or if the button is moved out of the banner.
+    nextLevelBtn.hidden = true;
+    return;
+  }
   const hasNext = state.levelIndex < LEVELS.length - 1;
   winBannerTextEl.textContent = hasNext
     ? "Level cleared!"
