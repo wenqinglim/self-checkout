@@ -159,7 +159,19 @@ function columnFromEvent(container, grid, e) {
   return Math.max(0, Math.min(grid.W - 1, col));
 }
 
+// Idempotent: called from every render of the bag/tray, but the container
+// nodes themselves persist across renders (innerHTML="" only clears their
+// children, not their own listeners). Re-adding on every render leaked
+// listeners exponentially — each accumulated drop handler fired
+// handleDrop*, which called render(), which wired one more listener. By a
+// few drops in, thousands of handlers ran per drop and the tab froze.
+// We attach the three listeners exactly once and route through
+// `container._onDrop`, refreshed each call so the latest closure (with the
+// current grid / callbacks) is used.
 function wireDropTarget(container, onDrop) {
+  container._onDrop = onDrop;
+  if (container._dropWired) return;
+  container._dropWired = true;
   container.addEventListener("dragover", (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
@@ -176,6 +188,6 @@ function wireDropTarget(container, onDrop) {
   container.addEventListener("drop", (e) => {
     e.preventDefault();
     container.classList.remove("drag-over");
-    onDrop(e);
+    container._onDrop?.(e);
   });
 }
