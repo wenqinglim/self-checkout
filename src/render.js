@@ -1,6 +1,20 @@
 // DOM rendering and input. This is the only module that touches the DOM.
 // Pure logic and data must never depend on anything here.
 
+// Renders a 3-star rating into `container`. `stars` is 0–3. Filled stars
+// carry the `.star-filled` class so CSS can colour them distinctly. Always
+// emits exactly three glyphs so the row stays the same width across calls.
+export function renderStars(container, stars) {
+  container.innerHTML = "";
+  for (let i = 0; i < 3; i++) {
+    const star = document.createElement("span");
+    const filled = i < stars;
+    star.className = filled ? "star-filled" : "star-empty";
+    star.textContent = filled ? "★" : "☆";
+    container.appendChild(star);
+  }
+}
+
 // Draws the bag grid and any placed items into `container`. Wires the
 // container as a drop target; calls callbacks.onDrop(instanceId, dropX)
 // when an item is dropped on the bag. `callbacks.isRemovable(placement)`

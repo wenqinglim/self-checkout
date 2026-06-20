@@ -177,3 +177,22 @@ export function timeBonus(max, decay, secondsElapsed) {
 export function finalScore(survival, bonus) {
   return survival + bonus;
 }
+
+// 3-star rating from a final score. `thresholds` is a length-3 ascending
+// array [s1, s2, s3]: s1 is the pass / 1-star bar (also the win condition),
+// s2 unlocks the 2nd star, s3 the 3rd. Returns 0 if `score < s1`, else the
+// count of thresholds met.
+//
+// The controller is the source of truth for `thresholds` — it falls back to
+// a derived ladder when a level omits `starThresholds`. This function stays
+// pure and ignores the level shape.
+export function starsFor(score, thresholds) {
+  if (!Array.isArray(thresholds) || thresholds.length !== 3) {
+    throw new Error("starsFor: thresholds must be a length-3 array");
+  }
+  let stars = 0;
+  for (const t of thresholds) {
+    if (score >= t) stars++;
+  }
+  return stars;
+}
