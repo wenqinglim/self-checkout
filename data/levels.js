@@ -93,6 +93,12 @@ export const LEVELS = [
       "jar",
     ],
     threshold: 210,
+    // Explicit ladder is required here: the controller's fallback
+    // (1.2x/1.4x) would produce a 3-star bar of 294, but the absolute
+    // ceiling is 265 (max base 165 + max time bonus 100), making it
+    // mathematically unreachable. With this ladder, 2-star (230) needs
+    // a clean carry in ≤35s and 3-star (250) in ≤15s — tight but real.
+    starThresholds: [210, 230, 250],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },

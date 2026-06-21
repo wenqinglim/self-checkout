@@ -413,6 +413,17 @@ test("starsFor: rejects malformed thresholds", () => {
   assert(threw, "expected throw on null thresholds");
 });
 
+test("starsFor: rejects non-ascending thresholds", () => {
+  let threw = false;
+  try { starsFor(100, [120, 80, 100]); } catch (_) { threw = true; }
+  assert(threw, "expected throw when s1 > s2");
+  threw = false;
+  try { starsFor(100, [80, 120, 100]); } catch (_) { threw = true; }
+  assert(threw, "expected throw when s2 > s3");
+  // Equal-adjacent thresholds are accepted (collapses a tier, but isn't a typo).
+  assertEq(starsFor(100, [80, 100, 100]), 3);
+});
+
 // --- Report -------------------------------------------------------------
 
 console.log(`\n${passed} passed, ${failed} failed`);

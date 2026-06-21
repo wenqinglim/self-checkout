@@ -190,6 +190,12 @@ export function starsFor(score, thresholds) {
   if (!Array.isArray(thresholds) || thresholds.length !== 3) {
     throw new Error("starsFor: thresholds must be a length-3 array");
   }
+  // Ascending order matters: a misordered ladder (e.g. [120, 80, 100] from a
+  // copy-paste typo) would otherwise silently produce non-monotone star
+  // counts at carry time. Fail loudly in development per CLAUDE.md.
+  if (thresholds[0] > thresholds[1] || thresholds[1] > thresholds[2]) {
+    throw new Error("starsFor: thresholds must be ascending");
+  }
   let stars = 0;
   for (const t of thresholds) {
     if (score >= t) stars++;

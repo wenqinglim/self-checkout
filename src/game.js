@@ -28,7 +28,7 @@ const state = {
   // Populated by Carry, cleared on any subsequent placement edit. Holding it
   // in state (rather than recomputing on every render) is what lets the
   // damaged highlight persist after Carry until the player moves something.
-  carryResult: null, // { damagedIds, survival, bonus, final } | null
+  carryResult: null, // { damagedIds, survival, bonus, final, stars } | null
   // ms timestamp of the player's first drag in the current level; null before
   // any drag. The clock never resets across retries within a level — that's
   // what makes time the real cost of unlimited do-overs (plan §8) — but it
@@ -116,7 +116,6 @@ function renderResult() {
   if (!state.carryResult) {
     resultEl.hidden = true;
     resultBreakdownEl.textContent = "";
-    renderStars(resultStarsEl, 0);
     return;
   }
   const { damagedIds, survival, bonus, final, stars } = state.carryResult;
