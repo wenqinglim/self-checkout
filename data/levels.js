@@ -8,10 +8,13 @@
 
 export const LEVELS = [
   // Level 1 — Bag Basics. A small 3x4 bag and sturdy items only (no eggs,
-  // bread, chips, jar, strawberries, bananas, greens), so the player can't
-  // break anything no matter how they pack. Teaches placement and the Carry
-  // button before any fragility is introduced. Tray fits in 10 of 12 cells
-  // with room to spare; max base 94 + max time bonus 100 = ceiling 194.
+  // bread, chips, jar, strawberries, bananas, greens). Under sensible play
+  // nothing breaks: this level teaches placement and Carry before any
+  // fragility puzzle is introduced. Adversarial stacks CAN still break
+  // sturdies (3 cans on one onion: load 24, x1.5 = 36 > 30 strength;
+  // 2 cans on the carrots' two cols: load 16, x1.5 = 24 > 20 strength),
+  // but no normal player working top-to-bottom hits these. Tray fits in
+  // 10 of 12 cells; max base 94 + max time bonus 100 = ceiling 194.
   // 1-star is reachable by carrying anything; 3-star requires a clean pack
   // and a reasonably fast finish (~24s).
   {

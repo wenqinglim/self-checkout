@@ -44,9 +44,10 @@ function currentLevel() {
 }
 
 // Star thresholds for `level`. Every level must declare `starThresholds`
-// — fail loudly per CLAUDE.md if a level is missing it, so a malformed
-// data entry surfaces at level-load rather than as a silent no-star carry.
-// `starsFor` (pure) re-validates length and ordering at use time.
+// — fail loudly per CLAUDE.md if a level is missing it. `loadLevel` calls
+// this once at transition so a typo in data/levels.js blows up on level
+// load rather than waiting until the player clicks Carry. `starsFor`
+// (pure) re-validates length and ordering at use time.
 function starThresholdsFor(level) {
   if (!level.starThresholds) {
     throw new Error(`level "${level.name}" is missing starThresholds`);
@@ -57,6 +58,9 @@ function starThresholdsFor(level) {
 function loadLevel(idx) {
   state.levelIndex = idx;
   const level = currentLevel();
+  // Validate level shape up-front so bad data surfaces at transition, not
+  // on the first Carry — see comment on starThresholdsFor.
+  starThresholdsFor(level);
   state.grid = level.bag;
   state.bag = [];
   // Prefix instance ids with the level index so they don't collide across
