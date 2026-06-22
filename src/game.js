@@ -43,15 +43,15 @@ function currentLevel() {
   return LEVELS[state.levelIndex];
 }
 
-// Star thresholds for `level`. If the level declares `starThresholds`
-// (length-3 ascending), use it verbatim. Otherwise derive a ladder from the
-// legacy single `threshold` so un-migrated levels still award stars without
-// the data layer needing to know about this feature. Once all levels carry
-// explicit `starThresholds`, the fallback can be removed.
+// Star thresholds for `level`. Every level must declare `starThresholds`
+// — fail loudly per CLAUDE.md if a level is missing it, so a malformed
+// data entry surfaces at level-load rather than as a silent no-star carry.
+// `starsFor` (pure) re-validates length and ordering at use time.
 function starThresholdsFor(level) {
-  if (level.starThresholds) return level.starThresholds;
-  const s1 = level.threshold;
-  return [s1, Math.round(s1 * 1.2), Math.round(s1 * 1.4)];
+  if (!level.starThresholds) {
+    throw new Error(`level "${level.name}" is missing starThresholds`);
+  }
+  return level.starThresholds;
 }
 
 function loadLevel(idx) {
