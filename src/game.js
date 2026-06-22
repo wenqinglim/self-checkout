@@ -8,10 +8,11 @@ import {
   finalScore,
   isRemovable,
   settle,
+  starsFor,
   survivalScore,
   timeBonus,
 } from "./logic.js";
-import { renderBag, renderTray } from "./render.js";
+import { renderBag, renderStars, renderTray } from "./render.js";
 
 const CLOCK_TICK_MS = 250;
 
@@ -27,7 +28,7 @@ const state = {
   // Populated by Carry, cleared on any subsequent placement edit. Holding it
   // in state (rather than recomputing on every render) is what lets the
   // damaged highlight persist after Carry until the player moves something.
-  carryResult: null, // { damagedIds, survival, bonus, final } | null
+  carryResult: null, // { damagedIds, survival, bonus, final, stars } | null
   // ms timestamp of the player's first drag in the current level; null before
   // any drag. The clock never resets across retries within a level — that's
   // what makes time the real cost of unlimited do-overs (plan §8) — but it
@@ -40,6 +41,17 @@ const state = {
 
 function currentLevel() {
   return LEVELS[state.levelIndex];
+}
+
+// Star thresholds for `level`. If the level declares `starThresholds`
+// (length-3 ascending), use it verbatim. Otherwise derive a ladder from the
+// legacy single `threshold` so un-migrated levels still award stars without
+// the data layer needing to know about this feature. Once all levels carry
+// explicit `starThresholds`, the fallback can be removed.
+function starThresholdsFor(level) {
+  if (level.starThresholds) return level.starThresholds;
+  const s1 = level.threshold;
+  return [s1, Math.round(s1 * 1.2), Math.round(s1 * 1.4)];
 }
 
 function loadLevel(idx) {
@@ -70,6 +82,7 @@ const trayEl = document.getElementById("tray");
 const carryBtn = document.getElementById("carry-btn");
 const resultEl = document.getElementById("result");
 const resultScoreEl = document.getElementById("result-score-value");
+const resultStarsEl = document.getElementById("result-stars");
 const resultBreakdownEl = document.getElementById("result-breakdown");
 const clockEl = document.getElementById("clock");
 const winBannerEl = document.getElementById("win-banner");
@@ -105,13 +118,15 @@ function renderResult() {
     resultBreakdownEl.textContent = "";
     return;
   }
-  const { damagedIds, survival, bonus, final } = state.carryResult;
+  const { damagedIds, survival, bonus, final, stars } = state.carryResult;
   resultEl.hidden = false;
   // `final` is already rounded at compute time so display and the
   // threshold check stay consistent (no "Score: 80 but didn't win").
   resultScoreEl.textContent = String(final);
+  renderStars(resultStarsEl, stars);
   const intact = state.bag.length - damagedIds.size;
   const overflow = state.tray.length;
+  const [s1, s2, s3] = starThresholdsFor(currentLevel());
   const parts = [
     `survival ${survival}`,
     `time bonus ${Math.round(bonus)}`,
@@ -119,7 +134,7 @@ function renderResult() {
     `${damagedIds.size} broken`,
   ];
   if (overflow > 0) parts.push(`${overflow} left in tray`);
-  parts.push(`threshold ${currentLevel().threshold}`);
+  parts.push(`stars ★${s1} / ★★${s2} / ★★★${s3}`);
   resultBreakdownEl.textContent = parts.join(" · ");
 }
 
@@ -220,11 +235,15 @@ function handleCarry() {
   // 79.6 would render as "Score: 80" next to "threshold 80" but still fail
   // the (final >= threshold) check.
   const final = Math.round(finalScore(survival, bonus));
-  state.carryResult = { damagedIds, survival, bonus, final };
+  const thresholds = starThresholdsFor(level);
+  const stars = starsFor(final, thresholds);
+  state.carryResult = { damagedIds, survival, bonus, final, stars };
   // An empty bag yielding final = bonus is not a win — the player hasn't
   // packed anything. Without this gate, Carry-as-first-action would clear
-  // the level for free (bonus 100 >= threshold 80).
-  if (final >= level.threshold && state.bag.length > 0) {
+  // the level for free (bonus 100 >= threshold 80). `stars >= 1` is
+  // equivalent to `final >= thresholds[0]`, so this preserves the
+  // pre-existing pass/fail semantics for legacy levels.
+  if (stars >= 1 && state.bag.length > 0) {
     state.won = true;
     freezeClock();
   }

@@ -11,6 +11,7 @@ import {
   evaluateBreakage,
   finalScore,
   settle,
+  starsFor,
   survivalScore,
   timeBonus,
 } from "../src/logic.js";
@@ -379,6 +380,48 @@ test("timeBonus: floors at zero (never negative)", () => {
 test("finalScore: sums survival and bonus", () => {
   assertEq(finalScore(40, 60), 100);
   assertEq(finalScore(0, 0), 0);
+});
+
+// --- Stars ---------------------------------------------------------------
+
+test("starsFor: 0 when score is below the 1-star bar", () => {
+  assertEq(starsFor(0, [80, 100, 120]), 0);
+  assertEq(starsFor(79, [80, 100, 120]), 0);
+});
+
+test("starsFor: 1 at exact 1-star threshold (inclusive)", () => {
+  assertEq(starsFor(80, [80, 100, 120]), 1);
+  assertEq(starsFor(99, [80, 100, 120]), 1);
+});
+
+test("starsFor: 2 at exact 2-star threshold (inclusive)", () => {
+  assertEq(starsFor(100, [80, 100, 120]), 2);
+  assertEq(starsFor(119, [80, 100, 120]), 2);
+});
+
+test("starsFor: 3 at exact 3-star threshold (inclusive) and beyond", () => {
+  assertEq(starsFor(120, [80, 100, 120]), 3);
+  assertEq(starsFor(9999, [80, 100, 120]), 3);
+});
+
+test("starsFor: rejects malformed thresholds", () => {
+  let threw = false;
+  try { starsFor(100, [80, 100]); } catch (_) { threw = true; }
+  assert(threw, "expected throw on length-2 thresholds");
+  threw = false;
+  try { starsFor(100, null); } catch (_) { threw = true; }
+  assert(threw, "expected throw on null thresholds");
+});
+
+test("starsFor: rejects non-ascending thresholds", () => {
+  let threw = false;
+  try { starsFor(100, [120, 80, 100]); } catch (_) { threw = true; }
+  assert(threw, "expected throw when s1 > s2");
+  threw = false;
+  try { starsFor(100, [80, 120, 100]); } catch (_) { threw = true; }
+  assert(threw, "expected throw when s2 > s3");
+  // Equal-adjacent thresholds are accepted (collapses a tier, but isn't a typo).
+  assertEq(starsFor(100, [80, 100, 100]), 3);
 });
 
 // --- Report -------------------------------------------------------------

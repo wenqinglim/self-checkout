@@ -184,6 +184,17 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   font-size: 16px;
   font-weight: 600;
 }
+.result-stars {
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 2px;
+  color: #d8d3c5;
+}
+.result-stars .star-filled {
+  color: #f6c542;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
 .result-breakdown {
   margin-top: 4px;
   color: var(--hint);
