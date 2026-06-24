@@ -8,7 +8,8 @@
 //   strength  — HIDDEN; max loadFromAbove*CARRY_FACTOR before the item breaks
 //   value     — points awarded if the item survives the carry
 //   color     — placeholder visual; readable rectangles for the MVP
-//   tag       — short shorthand the player can read on the rectangle
+//   emoji     — single glyph rendered centered on the rectangle as the
+//               in-cell label; sized proportional to footprint by render.js
 //
 // The grid unit was halved in `feature/halve-grid-resolution`: a 1x1 cell is
 // now the size of a small can. Larger items are sized in multiples of that.
@@ -25,7 +26,7 @@ export const ITEMS = {
     strength: 60,
     value: 30,
     color: "#2e7d32",
-    tag: "WMLN",
+    emoji: "🍉",
   },
   canned: {
     id: "canned",
@@ -35,7 +36,7 @@ export const ITEMS = {
     strength: 45,
     value: 10,
     color: "#607d8b",
-    tag: "CAN",
+    emoji: "🥫",
   },
   soda: {
     id: "soda",
@@ -45,7 +46,7 @@ export const ITEMS = {
     strength: 30,
     value: 15,
     color: "#1565c0",
-    tag: "SODA",
+    emoji: "🥤",
   },
   cereal: {
     id: "cereal",
@@ -55,7 +56,7 @@ export const ITEMS = {
     strength: 14,
     value: 12,
     color: "#ef6c00",
-    tag: "CER",
+    emoji: "🥣",
   },
   bread: {
     id: "bread",
@@ -65,7 +66,7 @@ export const ITEMS = {
     strength: 5,
     value: 20,
     color: "#c69c6d",
-    tag: "BRD",
+    emoji: "🍞",
   },
   eggs: {
     id: "eggs",
@@ -75,7 +76,7 @@ export const ITEMS = {
     strength: 3,
     value: 35,
     color: "#fbc02d",
-    tag: "EGGS",
+    emoji: "🥚",
   },
   chips: {
     id: "chips",
@@ -85,7 +86,7 @@ export const ITEMS = {
     strength: 2,
     value: 8,
     color: "#e53935",
-    tag: "CHP",
+    emoji: "🍟",
   },
   jar: {
     id: "jar",
@@ -95,7 +96,7 @@ export const ITEMS = {
     strength: 12,
     value: 25,
     color: "#8e63b5",
-    tag: "JAR",
+    emoji: "🫙",
   },
   strawberries: {
     id: "strawberries",
@@ -105,7 +106,7 @@ export const ITEMS = {
     strength: 4,
     value: 22,
     color: "#e91e63",
-    tag: "STRW",
+    emoji: "🍓",
   },
   bananas: {
     id: "bananas",
@@ -115,7 +116,7 @@ export const ITEMS = {
     strength: 6,
     value: 18,
     color: "#fdd835",
-    tag: "BNNA",
+    emoji: "🍌",
   },
   greens: {
     id: "greens",
@@ -125,7 +126,7 @@ export const ITEMS = {
     strength: 4,
     value: 15,
     color: "#7cb342",
-    tag: "GRN",
+    emoji: "🥬",
   },
   potatoes: {
     id: "potatoes",
@@ -135,7 +136,7 @@ export const ITEMS = {
     strength: 50,
     value: 18,
     color: "#8d6e63",
-    tag: "POTA",
+    emoji: "🥔",
   },
   onions: {
     id: "onions",
@@ -145,7 +146,7 @@ export const ITEMS = {
     strength: 30,
     value: 12,
     color: "#bf8f5a",
-    tag: "ONIO",
+    emoji: "🧅",
   },
   carrots: {
     id: "carrots",
@@ -155,7 +156,7 @@ export const ITEMS = {
     strength: 20,
     value: 14,
     color: "#fb8c00",
-    tag: "CARR",
+    emoji: "🥕",
   },
 
   // --- Odd-aspect-ratio items unlocked by the finer grid ------------------
@@ -170,7 +171,7 @@ export const ITEMS = {
     strength: 4,
     value: 16,
     color: "#d2a35c",
-    tag: "BAGT",
+    emoji: "🥖",
   },
 
   // Wine: 1x3, narrow and tall. Has real heft but mid-fragile — it can hold
@@ -184,7 +185,7 @@ export const ITEMS = {
     strength: 10,
     value: 30,
     color: "#7a1f3d",
-    tag: "WINE",
+    emoji: "🍷",
   },
 
   // Pizza: 3x3, a big flat box. Surprisingly fragile — strength 6 means a
@@ -199,7 +200,7 @@ export const ITEMS = {
     strength: 6,
     value: 28,
     color: "#c83e3e",
-    tag: "PIZA",
+    emoji: "🍕",
   },
 
   // Flour: 2x2 rigid bag of flour. Bulky, mid-weight, and tough — a reasonable
@@ -212,6 +213,6 @@ export const ITEMS = {
     strength: 25,
     value: 14,
     color: "#efe7d4",
-    tag: "FLOU",
+    emoji: "🌾",
   },
 };

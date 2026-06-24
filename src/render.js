@@ -119,11 +119,14 @@ function itemEl(placement, items, opts) {
     el.style.height = `calc(var(--cell) * ${item.footprint.h})`;
   }
 
-  // Use the short `tag` in-cell — the full `name` wraps awkwardly on 1×1
-  // footprints. The full name is available on the wrapper's `title` attr.
+  // The emoji is the primary in-cell identifier; the full `name` lives on
+  // the wrapper's `title` attr. Size scales with the item's shorter edge so
+  // a 1×1 can stays legible while a 3×3 watermelon reads as a big icon.
   const label = document.createElement("div");
   label.className = "item-label";
-  label.textContent = item.tag;
+  label.textContent = item.emoji;
+  const scale = Math.min(item.footprint.w, item.footprint.h);
+  label.style.setProperty("--emoji-scale", scale);
   el.appendChild(label);
 
   const weight = document.createElement("div");

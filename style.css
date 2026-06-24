@@ -122,11 +122,24 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 }
 
 /* Both children are promoted above the .item.damaged ::after overlay
- * (which paints last as a sibling and would otherwise obscure them). */
+ * (which paints last as a sibling and would otherwise obscure them).
+ *
+ * The label is the emoji glyph. It fills the item area and is centered so
+ * 1×1 chips and 3×3 boxes both read at a glance. `--emoji-scale` is set
+ * inline per-item to min(footprint.w, footprint.h) — bigger items get
+ * bigger glyphs without overflowing the cell. */
 .item-label {
-  font-weight: 600;
-  position: relative;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * var(--emoji-scale, 1) * 0.7);
+  line-height: 1;
   z-index: 1;
+  /* Emoji don't need the readability text-shadow inherited from .item, and
+   * it muddies the glyphs. */
+  text-shadow: none;
 }
 
 .item-weight {
