@@ -15,10 +15,14 @@ export const LEVELS = [
   // Level 1 — Bag Basics. A 6x8 bag and sturdy items only (no eggs, bread,
   // chips, jar, strawberries, bananas, greens, baguette, wine, pizza). Under
   // sensible top-down play nothing breaks: this level teaches placement and
-  // Carry before any fragility puzzle is introduced. Tray fills 26/48 cells
-  // (54%) so the player has room to experiment. Max base 166 + bonus 100 =
-  // ceiling 266. 1-star is reachable by carrying anything; 3-star requires
-  // a clean pack and a reasonably fast finish (~35s).
+  // Carry before any fragility puzzle is introduced. Adversarial stacks CAN
+  // still break sturdies (3 cans stacked on one onion: column load 24, x1.5
+  // = 36 > 30 strength; 4 onions stacked above carrots' three-col footprint
+  // in a single column: column load 16, carrots see 16, x1.5 = 24 > 20),
+  // but no normal player working top-to-bottom hits these. Tray fills 26/48
+  // cells (54%) so the player has room to experiment. Max base 166 + bonus
+  // 100 = ceiling 266. 1-star is reachable by carrying anything; 3-star
+  // requires a clean pack and a reasonably fast finish (~35s).
   {
     id: 1,
     name: "Bag Basics",
@@ -142,12 +146,15 @@ export const LEVELS = [
   },
 
   // Level 6 — Heavy Haul. The inverse of Fragile Forest: an 8x10 bag filled
-  // 58/80 (73%) with heavy, rigid items (watermelon, 3 potatoes, 3 sodas,
-  // cans, onions, flour, wine) plus a single cereal as the fragile concern.
-  // The puzzle is the strength-budget chain — cans (str 45) at the bottom
-  // can hold cans above them, but the cereal (str 14) has to live near the
-  // top or it crumples. Tests intuition for "how much does this item bear?"
-  // without the fragility-roulette of Level 5. Max base 337.
+  // 56/80 (70%) with heavy, rigid items only (watermelon, 3 potatoes, 3
+  // sodas, 10 cans, 4 onions, 2 flour) plus a single cereal as the only
+  // fragile concern. Wine is deliberately excluded — its str 10 is lower
+  // than cereal's str 14, so a single can above wine would break it and
+  // the level would inherit the fragility-roulette character of Level 5.
+  // The puzzle here is the strength-budget chain — cans (str 45) at the
+  // bottom can hold cans above them, but cereal (str 14) has to live near
+  // the top or it crumples. Tests intuition for "how much does this item
+  // bear?" without mid-fragile items in play. Max base 317.
   {
     id: 6,
     name: "Heavy haul",
@@ -156,13 +163,13 @@ export const LEVELS = [
       "watermelon",
       "potatoes", "potatoes", "potatoes",
       "soda", "soda", "soda",
-      "canned", "canned", "canned", "canned", "canned", "canned",
+      "canned", "canned", "canned", "canned", "canned",
+      "canned", "canned", "canned", "canned", "canned",
       "onions", "onions", "onions", "onions",
       "cereal",
       "flour", "flour",
-      "wine", "wine",
     ],
-    starThresholds: [200, 280, 320],
+    starThresholds: [180, 250, 290],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },

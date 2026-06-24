@@ -188,8 +188,9 @@ export const ITEMS = {
   },
 
   // Pizza: 3x3, a big flat box. Surprisingly fragile — strength 6 means a
-  // single can directly above each column would break it. Belongs near the
-  // top of any pack that includes it.
+  // single can over ANY one of its three columns puts load 8 on the pizza
+  // (loads sum across spanned columns) and 8 × 1.5 = 12 > 6 breaks it.
+  // Belongs near the top of any pack that includes it.
   pizza: {
     id: "pizza",
     name: "Pizza box",
