@@ -113,7 +113,7 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   flex-direction: column;
   justify-content: space-between;
   /* Tightened from 6px 8px / 12px font to fit a 36px cell — a 1x1 item is
-   * now a small chip and needs to legibly show the tag + wt badge. */
+   * now a small chip and needs to legibly show the emoji + wt badge. */
   padding: 3px 4px;
   font-size: 10px;
   line-height: 1.1;
@@ -122,15 +122,34 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 }
 
 /* Both children are promoted above the .item.damaged ::after overlay
- * (which paints last as a sibling and would otherwise obscure them). */
+ * (which paints last as a sibling and would otherwise obscure them).
+ *
+ * The label is the emoji glyph. It fills the item area and is centered so
+ * 1×1 chips and 3×3 boxes both read at a glance. `--emoji-scale` is set
+ * inline per-item to min(footprint.w, footprint.h) — bigger items get
+ * bigger glyphs without overflowing the cell. */
 .item-label {
-  font-weight: 600;
-  position: relative;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell) * var(--emoji-scale, 1) * 0.7);
+  line-height: 1;
   z-index: 1;
+  /* Emoji don't need the readability text-shadow inherited from .item, and
+   * it muddies the glyphs. */
+  text-shadow: none;
 }
 
 .item-weight {
+  /* The emoji label is now position: absolute, so the weight badge is the
+   * only in-flow flex child. `justify-content: space-between` on a single
+   * child pins it to the main-start (top); `margin-top: auto` shoves it
+   * back to the bottom edge where it belongs. `align-self: flex-end`
+   * keeps it pushed to the cross-axis end (right). */
   align-self: flex-end;
+  margin-top: auto;
   font-variant-numeric: tabular-nums;
   font-size: 9px;
   background: rgba(0, 0, 0, 0.28);
