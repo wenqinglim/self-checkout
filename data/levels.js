@@ -61,16 +61,19 @@ export const LEVELS = [
     timeDecay: 1.0,
   },
 
-  // Level 3 — Wide & Shallow. An 8x4 bag is the spatial inverse of Level 2:
-  // only four vertical layers, plenty of horizontal room. Tray fills 26/32
-  // cells (81%). The trap is putting the eggs anywhere but the top row,
-  // where any load above them wins. Pizza is the new awkward neighbour —
-  // 3x3 in a 4-tall bag, leaving only one row above it for fragile cover.
-  // Baguette (4x1) demands a clean 4-wide stripe somewhere. Max base 143.
+  // Level 3 — Wide & Shallow. A 9x4 bag is the spatial inverse of Level 2:
+  // only four vertical layers, plenty of horizontal room. Tray fills 26/36
+  // cells (72%). The trap is putting the eggs anywhere but the top row,
+  // where any load above them wins. Pizza is the awkward neighbour — 3x3
+  // in a 4-tall bag, leaving only one row above it for fragile cover.
+  // Baguette (4x1) demands a clean 4-wide stripe somewhere; the bag is
+  // 9 wide rather than 8 so pizza (3 cols) and baguette (4 cols) can sit
+  // in disjoint column ranges with breathing room for the smaller items
+  // around them. Max base 143.
   {
     id: 3,
     name: "Wide & Shallow",
-    bag: { W: 8, H: 4 },
+    bag: { W: 9, H: 4 },
     tray: [
       "pizza",
       "canned", "canned",
@@ -162,14 +165,17 @@ export const LEVELS = [
   // layout exists (heavy on bottom, fragile/light spread across the top row
   // in separate columns), but every odd-shaped item — baguette (4x1, str 4),
   // pizza (3x3, str 6), soda (1x3, wt 9) — chews up the top row, forcing
-  // layout trade-offs. 6x6 bag, 30/36 cells (83%). Max base 159. The 3-star
-  // bar of 235 (~91% of ceiling) means even a clean carry needs a non-
-  // trivial bonus (~76, finish in ≤24s) — the level forces a speed-vs-safety
-  // choice.
+  // layout trade-offs. 7x6 bag, 30/42 cells (71%). The seventh column
+  // matters here: pizza (3 cols) and baguette (4 cols) together cover 7
+  // cols, which only fit disjointly in a ≥7-wide bag — otherwise baguette
+  // is forced to stack on pizza and the level collapses to one layout.
+  // Max base 159. The 1-star bar of 140 (~88% of max base) means a clean
+  // carry always wins; the 2-star and 3-star bars require non-trivial
+  // bonus on top of survival, preserving the speed-vs-safety choice.
   {
     id: 7,
     name: "The glass-jar bind",
-    bag: { W: 6, H: 6 },
+    bag: { W: 7, H: 6 },
     tray: [
       "canned", "canned",
       "soda",
@@ -180,7 +186,7 @@ export const LEVELS = [
       "baguette",
       "pizza",
     ],
-    starThresholds: [175, 210, 235],
+    starThresholds: [140, 210, 235],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
