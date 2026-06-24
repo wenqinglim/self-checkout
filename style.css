@@ -1,5 +1,8 @@
 :root {
-  --cell: 72px;
+  /* Halved from 72px in feature/halve-grid-resolution: bag dims in
+   * data/levels.js doubled, so the on-screen bag footprint stays roughly
+   * the same while items can be sized at finer granularity. */
+  --cell: 36px;
   --bag-border: #6e6051;
   --cell-line: #d9cdb4;
   --bag-bg: #f5ecd5;
@@ -100,8 +103,8 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 
 .item {
   position: relative;
-  border-radius: 6px;
-  border: 2px solid rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.18),
     0 1px 2px rgba(0, 0, 0, 0.18);
@@ -109,9 +112,11 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 6px 8px;
-  font-size: 12px;
-  line-height: 1.15;
+  /* Tightened from 6px 8px / 12px font to fit a 36px cell — a 1x1 item is
+   * now a small chip and needs to legibly show the tag + wt badge. */
+  padding: 3px 4px;
+  font-size: 10px;
+  line-height: 1.1;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
   user-select: none;
 }
@@ -127,10 +132,10 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 .item-weight {
   align-self: flex-end;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: 9px;
   background: rgba(0, 0, 0, 0.28);
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: 0 3px;
+  border-radius: 2px;
   position: relative;
   z-index: 1;
 }
