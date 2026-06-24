@@ -6,203 +6,181 @@
 // requires final score >= starThresholds[0]. CARRY_FACTOR is global and
 // lives in src/logic.js.
 //
-// Grids were doubled in `feature/halve-grid-resolution` so item footprints
-// can express realistic relative sizes. Trays were grown to refill the bag
-// to roughly the previous occupancy ratio, and thresholds rescaled to the
-// new max base scores.
+// Bags were shrunk in `feature/smaller-bags-fewer-items` to roughly the size
+// of a real grocery bag (25-40 cells), and trays trimmed to 6-10 items per
+// level. Smaller bags raise fill ratios and force tighter packing decisions;
+// thresholds were rescaled to the new ceilings using each level's original
+// star-ratio character (easier levels keep their 85%-of-ceiling 3-star bar;
+// the glass-jar capstone keeps its 90% bar).
 
 export const LEVELS = [
-  // Level 1 — Bag Basics. A 6x8 bag and sturdy items only (no eggs, bread,
-  // chips, jar, strawberries, bananas, greens, baguette, wine, pizza). Under
-  // sensible top-down play nothing breaks: this level teaches placement and
-  // Carry before any fragility puzzle is introduced. Adversarial stacks CAN
-  // still break sturdies (3 cans stacked on one onion: column load 24, x1.5
-  // = 36 > 30 strength; 4 onions stacked above carrots' three-col footprint
-  // in a single column: column load 16, carrots see 16, x1.5 = 24 > 20),
-  // but no normal player working top-to-bottom hits these. Tray fills 26/48
-  // cells (54%) so the player has room to experiment. Max base 166 + bonus
-  // 100 = ceiling 266. 1-star is reachable by carrying anything; 3-star
-  // requires a clean pack and a reasonably fast finish (~35s).
+  // Level 1 — Bag Basics. A 5x5 bag and sturdy items only (no eggs, bread,
+  // chips, jar, strawberries, bananas, greens, baguette, wine, pizza).
+  // Under sensible top-down play nothing breaks; this level teaches placement
+  // and Carry before any fragility puzzle is introduced. Tray fills 16/25
+  // cells (64%) so there is real packing room to experiment. Max base 100 +
+  // bonus 100 = ceiling 200.
   {
     id: 1,
     name: "Bag Basics",
-    bag: { W: 6, H: 8 },
+    bag: { W: 5, H: 5 },
     tray: [
-      "canned", "canned", "canned", "canned",
-      "onions", "onions", "onions", "onions",
-      "carrots", "carrots",
-      "potatoes", "potatoes",
+      "canned", "canned", "canned",
+      "onions", "onions",
+      "carrots",
+      "potatoes",
       "flour",
     ],
-    starThresholds: [110, 175, 230],
+    starThresholds: [80, 130, 170],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
 
-  // Level 2 — Tall & Narrow. A 4x14 bag still forces strict stack-order
-  // thinking: most placements are locked under whatever the player puts on
-  // top. Tray fills 38/56 cells (68%). Potatoes are the obvious bottom anchor
-  // pair; chips and bread belong on top; strawberries are the lightest fragile
-  // ballast. Wine bottles are an awkward 1x3 — they occupy a single column for
-  // three rows, biting hard into a narrow bag. Max base 308.
+  // Level 2 — Tall & Narrow. A 3x10 bag still forces strict stack-order
+  // thinking: most placements lock under whatever the player puts on top.
+  // Tray fills 21/30 cells (70%). Potatoes are the obvious bottom anchor;
+  // chips and bread belong on top; strawberries are the lightest fragile
+  // ballast. Wine bottles are an awkward 1x3 in a 3-wide bag — they bite a
+  // full column for three rows. Max base 158.
   {
     id: 2,
     name: "Tall & Narrow",
-    bag: { W: 4, H: 14 },
+    bag: { W: 3, H: 10 },
     tray: [
-      "potatoes", "potatoes",
-      "soda", "soda",
-      "canned", "canned", "canned", "canned",
-      "bread", "bread",
+      "potatoes",
+      "canned", "canned",
+      "soda",
+      "bread",
       "chips",
-      "jar", "jar",
-      "strawberries", "strawberries",
-      "wine", "wine",
+      "strawberries",
+      "wine",
+      "jar",
     ],
-    starThresholds: [180, 250, 300],
+    starThresholds: [115, 160, 190],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
 
-  // Level 3 — Wide & Shallow. A 10x6 bag is a totally different spatial puzzle
-  // from a tall bag: only six vertical layers, but plenty of horizontal room.
-  // Tray fills 51/60 cells (85%). A clean three-or-four-layer pack
-  // (sturdy/mid/fragile) keeps every item intact; the trap is putting the
-  // eggs anywhere but the top row, where any load above them wins. Pizza is
-  // the new awkward neighbour — 3x3 flat and surprisingly fragile (str 6).
-  // Max base 286.
+  // Level 3 — Wide & Shallow. An 8x4 bag is the spatial inverse of Level 2:
+  // only four vertical layers, plenty of horizontal room. Tray fills 26/32
+  // cells (81%). The trap is putting the eggs anywhere but the top row,
+  // where any load above them wins. Pizza is the new awkward neighbour —
+  // 3x3 in a 4-tall bag, leaving only one row above it for fragile cover.
+  // Baguette (4x1) demands a clean 4-wide stripe somewhere. Max base 143.
   {
     id: 3,
     name: "Wide & Shallow",
-    bag: { W: 10, H: 6 },
+    bag: { W: 8, H: 4 },
     tray: [
-      "cereal", "cereal",
-      "bananas", "bananas",
-      "carrots", "carrots",
-      "greens", "greens",
-      "eggs", "eggs",
-      "canned", "canned", "canned", "canned",
       "pizza",
+      "canned", "canned",
+      "carrots",
+      "bananas",
+      "eggs",
+      "cereal",
       "baguette",
-      "flour",
     ],
-    starThresholds: [170, 230, 270],
+    starThresholds: [105, 145, 170],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
 
-  // Level 4 — Protect the Eggs. The "shield the eggs" idea, now with multiple
-  // ultra-fragile items competing for the top row. 8x10 bag, 59/80 cells
-  // filled. Putting eggs OR strawberries anywhere with weight above them
-  // loses 35 or 22 respectively. Wine bottles (str 10) are mid-fragile and
-  // need their own column-stripe handled. Max base 459.
+  // Level 4 — Protect the eggs. Multiple ultra-fragile items competing for
+  // top-row real estate in a 5x7 bag, 24/35 cells filled (69%). Eggs lose
+  // 35 if anything sits above them; strawberries lose 22 each. Wine bottles
+  // (str 10) are mid-fragile and need their own column-stripe. Watermelon
+  // is the dominant bottom anchor. Max base 212.
   {
     id: 4,
     name: "Protect the eggs",
-    bag: { W: 8, H: 10 },
+    bag: { W: 5, H: 7 },
     tray: [
       "watermelon",
-      "potatoes", "potatoes",
-      "canned", "canned", "canned", "canned",
-      "soda", "soda",
-      "bread", "bread",
-      "eggs", "eggs", "eggs",
-      "strawberries", "strawberries", "strawberries", "strawberries",
-      "chips", "chips",
-      "wine", "wine",
-      "flour",
+      "potatoes",
+      "canned", "canned",
+      "eggs", "eggs",
+      "strawberries", "strawberries",
+      "wine",
     ],
-    starThresholds: [250, 360, 420],
+    starThresholds: [140, 200, 235],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
 
-  // Level 5 — Fragile Forest. An 8x8 bag stuffed (58/64 cells, 91%) with
-  // mostly fragile items: bananas, greens, eggs, strawberries, jar, wine,
-  // baguette, bread, pizza — plus a single potato and pairs of carrots as the
-  // only viable anchors. Every mid-layer slot bears a sub-strength load;
-  // there's almost no slack. Max base 460. The level rewards finding the one
-  // clean layering rather than rushing.
+  // Level 5 — Fragile forest. A 6x6 bag stuffed (31/36, 86%) with mostly
+  // fragile items — bananas, eggs, strawberries, wine, baguette, pizza —
+  // plus a potato and carrots as the only viable anchors. Every mid-layer
+  // slot bears a sub-strength load; almost no slack. Max base 221. The
+  // level rewards finding the one clean layering rather than rushing.
   {
     id: 5,
     name: "Fragile forest",
-    bag: { W: 8, H: 8 },
+    bag: { W: 6, H: 6 },
     tray: [
       "potatoes",
-      "carrots", "carrots",
-      "bananas", "bananas", "bananas",
-      "greens", "greens",
-      "eggs", "eggs",
-      "strawberries", "strawberries", "strawberries",
-      "jar", "jar",
-      "wine", "wine",
-      "baguette",
-      "bread", "bread",
-      "pizza",
-    ],
-    starThresholds: [240, 350, 420],
-    timeBonusMax: 100,
-    timeDecay: 1.0,
-  },
-
-  // Level 6 — Heavy Haul. The inverse of Fragile Forest: an 8x10 bag filled
-  // 56/80 (70%) with heavy, rigid items only (watermelon, 3 potatoes, 3
-  // sodas, 10 cans, 4 onions, 2 flour) plus a single cereal as the only
-  // fragile concern. Wine is deliberately excluded — its str 10 is lower
-  // than cereal's str 14, so a single can above wine would break it and
-  // the level would inherit the fragility-roulette character of Level 5.
-  // The puzzle here is the strength-budget chain — cans (str 45) at the
-  // bottom can hold cans above them, but cereal (str 14) has to live near
-  // the top or it crumples. Tests intuition for "how much does this item
-  // bear?" without mid-fragile items in play. Max base 317.
-  {
-    id: 6,
-    name: "Heavy haul",
-    bag: { W: 8, H: 10 },
-    tray: [
-      "watermelon",
-      "potatoes", "potatoes", "potatoes",
-      "soda", "soda", "soda",
-      "canned", "canned", "canned", "canned", "canned",
-      "canned", "canned", "canned", "canned", "canned",
-      "onions", "onions", "onions", "onions",
-      "cereal",
-      "flour", "flour",
-    ],
-    starThresholds: [180, 250, 290],
-    timeBonusMax: 100,
-    timeDecay: 1.0,
-  },
-
-  // Level 7 — The Glass-Jar Bind. The original capstone, retained in spirit.
-  // The jar is heavy enough (wt 7) to crush bread/eggs/chips if it sits on
-  // them, AND fragile enough (str 12) to break under ~two cans or a heavy
-  // stack. A zero-damage layout exists (heavy on bottom, fragile/light
-  // spread across the top row in separate columns), but every odd-shaped
-  // newcomer — baguette (4x1, str 4), wine (1x3, str 10), pizza (3x3, str 6)
-  // — chews up the top row, forcing layout trade-offs. 8x10 bag, 67/80 cells
-  // (84%). Max base 388. The 3-star bar of 440 means even a clean carry
-  // needs a non-trivial bonus (~52, finish in ≤48s). The choice the level
-  // forces is speed-vs-safety.
-  {
-    id: 7,
-    name: "The glass-jar bind",
-    bag: { W: 8, H: 10 },
-    tray: [
-      "watermelon",
-      "canned", "canned", "canned", "canned",
-      "soda", "soda",
-      "cereal", "cereal",
-      "bread", "bread",
-      "eggs", "eggs",
-      "chips", "chips",
-      "jar", "jar",
+      "carrots",
+      "bananas", "bananas",
+      "eggs",
+      "strawberries", "strawberries",
       "baguette",
       "wine",
       "pizza",
+    ],
+    starThresholds: [140, 200, 240],
+    timeBonusMax: 100,
+    timeDecay: 1.0,
+  },
+
+  // Level 6 — Heavy haul. The inverse of Fragile Forest: a 5x7 bag at 29/35
+  // cells (83%), filled with heavy rigid items only. Wine is deliberately
+  // excluded — its str 10 is lower than cereal's str 14, so a can above wine
+  // would break it and the level would inherit fragility-roulette
+  // character. The puzzle is the strength-budget chain: cans (str 45) at
+  // the bottom can hold cans above them, but cereal (str 14) has to live
+  // near the top or it crumples. Max base 143.
+  {
+    id: 6,
+    name: "Heavy haul",
+    bag: { W: 5, H: 7 },
+    tray: [
+      "watermelon",
+      "potatoes",
+      "soda",
+      "canned", "canned", "canned",
+      "onions", "onions",
+      "cereal",
       "flour",
     ],
-    starThresholds: [330, 400, 440],
+    starThresholds: [105, 145, 170],
+    timeBonusMax: 100,
+    timeDecay: 1.0,
+  },
+
+  // Level 7 — The glass-jar bind. The capstone. The jar is heavy enough
+  // (wt 7) to crush bread/eggs/chips if it sits on them, AND fragile enough
+  // (str 12) to break under ~two cans or a heavy stack. A zero-damage
+  // layout exists (heavy on bottom, fragile/light spread across the top row
+  // in separate columns), but every odd-shaped item — baguette (4x1, str 4),
+  // pizza (3x3, str 6), soda (1x3, wt 9) — chews up the top row, forcing
+  // layout trade-offs. 6x6 bag, 30/36 cells (83%). Max base 159. The 3-star
+  // bar of 235 (~91% of ceiling) means even a clean carry needs a non-
+  // trivial bonus (~76, finish in ≤24s) — the level forces a speed-vs-safety
+  // choice.
+  {
+    id: 7,
+    name: "The glass-jar bind",
+    bag: { W: 6, H: 6 },
+    tray: [
+      "canned", "canned",
+      "soda",
+      "cereal",
+      "eggs",
+      "chips",
+      "jar",
+      "baguette",
+      "pizza",
+    ],
+    starThresholds: [175, 210, 235],
     timeBonusMax: 100,
     timeDecay: 1.0,
   },
