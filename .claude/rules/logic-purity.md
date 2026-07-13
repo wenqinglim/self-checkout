@@ -1,7 +1,7 @@
 ---
 paths:
   - "src/logic.js"
-  - "data/**/*.js"
+  - "data/*.js"
   - "tests/**/*.js"
 ---
 

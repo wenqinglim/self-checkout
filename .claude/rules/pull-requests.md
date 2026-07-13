@@ -1,10 +1,15 @@
 ---
 paths:
   - "src/**/*.js"
-  - "data/**/*.js"
+  - "data/*.js"
   - "tests/**/*.js"
   - "index.html"
   - "style.css"
+  - "CLAUDE.md"
+  - ".claude/rules/**/*.md"
+  - "package.json"
+  - "README.md"
+  - "grocery-bagging-game-plan.md"
 ---
 
 # Pull-request conventions
