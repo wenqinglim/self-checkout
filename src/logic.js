@@ -180,13 +180,19 @@ export function finalScore(survival, bonus) {
 
 // 3-star rating from a final score. `thresholds` is a length-3 ascending
 // array [s1, s2, s3]: s1 is the pass / 1-star bar (also the win condition),
-// s2 unlocks the 2nd star, s3 the 3rd. Returns 0 if `score < s1`, else the
-// count of thresholds met.
+// s2 unlocks the 2nd star, s3 the 3rd. `stars` is 0 if `score < s1`, else the
+// count of thresholds met — except the 3rd star, which additionally requires
+// `damagedCount === 0`: the time bonus can push a run past s3 even after
+// breaking cheap items, so without this gate "perfect" is buyable with speed.
+//
+// Returns { stars, cappedByBreakage } rather than a bare count so the UI can
+// explain the cap without re-deriving the s3 comparison — this function is
+// the single source of truth for the rule.
 //
 // The controller is the source of truth for `thresholds` — it falls back to
 // a derived ladder when a level omits `starThresholds`. This function stays
 // pure and ignores the level shape.
-export function starsFor(score, thresholds) {
+export function starsFor(score, thresholds, damagedCount) {
   if (!Array.isArray(thresholds) || thresholds.length !== 3) {
     throw new Error("starsFor: thresholds must be a length-3 array");
   }
@@ -196,9 +202,14 @@ export function starsFor(score, thresholds) {
   if (thresholds[0] > thresholds[1] || thresholds[1] > thresholds[2]) {
     throw new Error("starsFor: thresholds must be ascending");
   }
+  if (!Number.isInteger(damagedCount) || damagedCount < 0) {
+    throw new Error("starsFor: damagedCount must be a non-negative integer");
+  }
   let stars = 0;
   for (const t of thresholds) {
     if (score >= t) stars++;
   }
-  return stars;
+  const cappedByBreakage = stars === 3 && damagedCount > 0;
+  if (cappedByBreakage) stars = 2;
+  return { stars, cappedByBreakage };
 }
