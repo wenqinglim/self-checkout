@@ -139,6 +139,12 @@ function renderResult() {
   ];
   if (overflow > 0) parts.push(`${overflow} left in tray`);
   parts.push(`stars ★${s1} / ★★${s2} / ★★★${s3}`);
+  // Surface the zero-breakage gate the moment it bites: the score cleared s3
+  // but breakage capped the run at 2★, which would otherwise read as a
+  // threshold bug ("I scored above the 3★ bar, where's my star?").
+  if (final >= s3 && damagedIds.size > 0) {
+    parts.push("3★ needs a break-free carry");
+  }
   resultBreakdownEl.textContent = parts.join(" · ");
 }
 
@@ -240,7 +246,7 @@ function handleCarry() {
   // the (final >= threshold) check.
   const final = Math.round(finalScore(survival, bonus));
   const thresholds = starThresholdsFor(level);
-  const stars = starsFor(final, thresholds);
+  const stars = starsFor(final, thresholds, damagedIds.size);
   state.carryResult = { damagedIds, survival, bonus, final, stars };
   // An empty bag yielding final = bonus is not a win — the player hasn't
   // packed anything. Without this gate, Carry-as-first-action would clear
