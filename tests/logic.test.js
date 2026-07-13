@@ -399,36 +399,41 @@ test("finalScore: sums survival and bonus", () => {
 // --- Stars ---------------------------------------------------------------
 
 test("starsFor: 0 when score is below the 1-star bar", () => {
-  assertEq(starsFor(0, [80, 100, 120], 0), 0);
-  assertEq(starsFor(79, [80, 100, 120], 0), 0);
+  assertEq(starsFor(0, [80, 100, 120], 0).stars, 0);
+  assertEq(starsFor(79, [80, 100, 120], 0).stars, 0);
 });
 
 test("starsFor: 1 at exact 1-star threshold (inclusive)", () => {
-  assertEq(starsFor(80, [80, 100, 120], 0), 1);
-  assertEq(starsFor(99, [80, 100, 120], 0), 1);
+  assertEq(starsFor(80, [80, 100, 120], 0).stars, 1);
+  assertEq(starsFor(99, [80, 100, 120], 0).stars, 1);
 });
 
 test("starsFor: 2 at exact 2-star threshold (inclusive)", () => {
-  assertEq(starsFor(100, [80, 100, 120], 0), 2);
-  assertEq(starsFor(119, [80, 100, 120], 0), 2);
+  assertEq(starsFor(100, [80, 100, 120], 0).stars, 2);
+  assertEq(starsFor(119, [80, 100, 120], 0).stars, 2);
 });
 
 test("starsFor: 3 at exact 3-star threshold (inclusive) and beyond", () => {
-  assertEq(starsFor(120, [80, 100, 120], 0), 3);
-  assertEq(starsFor(9999, [80, 100, 120], 0), 3);
+  assertEq(starsFor(120, [80, 100, 120], 0).stars, 3);
+  assertEq(starsFor(9999, [80, 100, 120], 0).stars, 3);
+  assertEq(starsFor(120, [80, 100, 120], 0).cappedByBreakage, false);
 });
 
 test("starsFor: breakage caps the run at 2 stars even above the 3-star bar", () => {
   // The time bonus can push a run past s3 with cheap items broken; the 3rd
   // star is reserved for break-free carries.
-  assertEq(starsFor(120, [80, 100, 120], 1), 2);
-  assertEq(starsFor(9999, [80, 100, 120], 3), 2);
+  const capped = starsFor(120, [80, 100, 120], 1);
+  assertEq(capped.stars, 2);
+  assertEq(capped.cappedByBreakage, true);
+  assertEq(starsFor(9999, [80, 100, 120], 3).stars, 2);
 });
 
 test("starsFor: breakage does NOT affect the 0/1/2-star tiers", () => {
-  assertEq(starsFor(79, [80, 100, 120], 2), 0);
-  assertEq(starsFor(80, [80, 100, 120], 2), 1);
-  assertEq(starsFor(100, [80, 100, 120], 2), 2);
+  assertEq(starsFor(79, [80, 100, 120], 2).stars, 0);
+  assertEq(starsFor(80, [80, 100, 120], 2).stars, 1);
+  assertEq(starsFor(100, [80, 100, 120], 2).stars, 2);
+  // Below s3 the cap never fires — 2 stars with breakage is earned, not capped.
+  assertEq(starsFor(100, [80, 100, 120], 2).cappedByBreakage, false);
 });
 
 test("starsFor: rejects malformed thresholds", () => {
@@ -448,7 +453,7 @@ test("starsFor: rejects non-ascending thresholds", () => {
   try { starsFor(100, [80, 120, 100], 0); } catch (_) { threw = true; }
   assert(threw, "expected throw when s2 > s3");
   // Equal-adjacent thresholds are accepted (collapses a tier, but isn't a typo).
-  assertEq(starsFor(100, [80, 100, 100], 0), 3);
+  assertEq(starsFor(100, [80, 100, 100], 0).stars, 3);
 });
 
 test("starsFor: rejects malformed damagedCount", () => {
