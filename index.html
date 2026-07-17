@@ -21,6 +21,10 @@
         <span class="clock-label">Time</span>
         <span id="clock" class="clock-value">0.0s</span>
       </div>
+      <div class="carries-row">
+        <span class="carries-label">Carries</span>
+        <span id="carries-left" class="carries-value">–</span>
+      </div>
     </header>
 
     <main class="play-area">
@@ -44,6 +48,12 @@
             <span id="win-banner-text">Level cleared!</span>
             <button type="button" id="next-level-btn" class="next-level-btn" hidden>
               Next level
+            </button>
+          </div>
+          <div id="fail-banner" class="fail-banner" hidden>
+            <span id="fail-banner-text">Out of carries — level failed</span>
+            <button type="button" id="retry-btn" class="retry-btn">
+              Retry
             </button>
           </div>
         </div>

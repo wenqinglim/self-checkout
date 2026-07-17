@@ -213,3 +213,35 @@ export function starsFor(score, thresholds, damagedCount) {
   if (cappedByBreakage) stars = 2;
   return { stars, cappedByBreakage };
 }
+
+// ---------- Carry attempts ---------------------------------------------------
+
+// Attempt budget for a level. Strength is hidden from the player, so Carry
+// doubles as the only fragility probe — the budget is what turns probing from
+// free trial-and-error into a spend. Returns { remaining, failed }. `failed`
+// is true only when the budget is exhausted WITHOUT a win: winning on the
+// final carry is a win, not a fail.
+//
+// `maxCarries` comes from data/levels.js; a missing field arrives here as
+// undefined and fails the integer check — fail loudly rather than defaulting.
+// `carriesUsed` above the budget means the controller's post-fail lock leaked
+// a Carry through; surface that instead of clamping.
+export function attemptsState(maxCarries, carriesUsed, won) {
+  if (!Number.isInteger(maxCarries) || maxCarries < 1) {
+    throw new Error("attemptsState: maxCarries must be an integer >= 1");
+  }
+  if (
+    !Number.isInteger(carriesUsed) ||
+    carriesUsed < 0 ||
+    carriesUsed > maxCarries
+  ) {
+    throw new Error(
+      "attemptsState: carriesUsed must be an integer in [0, maxCarries]",
+    );
+  }
+  if (typeof won !== "boolean") {
+    throw new Error("attemptsState: won must be a boolean");
+  }
+  const remaining = maxCarries - carriesUsed;
+  return { remaining, failed: !won && remaining === 0 };
+}

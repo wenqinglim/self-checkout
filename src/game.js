@@ -4,6 +4,7 @@
 import { ITEMS } from "../data/items.js";
 import { LEVELS } from "../data/levels.js";
 import {
+  attemptsState,
   evaluateBreakage,
   finalScore,
   isRemovable,
@@ -17,7 +18,8 @@ import { renderBag, renderStars, renderTray } from "./render.js";
 const CLOCK_TICK_MS = 250;
 
 // Mutable state. `levelIndex` indirects through LEVELS so loadLevel can reset
-// the per-level slice (bag/tray/carry/clock/won) when the player advances.
+// the per-level slice (bag/tray/carry/clock/won/carries/failed) when the
+// player advances or retries.
 // Tray items each get a unique instance id so we can refer to them across
 // re-renders even when the same item type appears more than once.
 const state = {
@@ -30,13 +32,20 @@ const state = {
   // damaged highlight persist after Carry until the player moves something.
   carryResult: null, // { damagedIds, survival, bonus, final, stars } | null
   // ms timestamp of the player's first drag in the current level; null before
-  // any drag. The clock never resets across retries within a level — that's
-  // what makes time the real cost of unlimited do-overs (plan §8) — but it
-  // does reset on level transition because each level has its own time tuning.
+  // any drag. The clock keeps running across Carries within a level — time
+  // punishes slow probing inside the attempt budget — but it does reset on
+  // level transition and on Retry, because both restart the level wholesale
+  // with its own time tuning.
   clockStartedAt: null,
   // True once Carry produces final >= threshold. Locks all interactions until
   // the player advances to the next level.
   won: false,
+  // Carry presses spent on the current level. When they reach the level's
+  // maxCarries without a win, the level fails and locks (see `failed`).
+  carriesUsed: 0,
+  // True once the attempt budget is exhausted without a win. Locks all
+  // interactions until the player clicks Retry, which restarts the level.
+  failed: false,
 };
 
 function currentLevel() {
@@ -55,12 +64,30 @@ function starThresholdsFor(level) {
   return level.starThresholds;
 }
 
+// Carry-attempt budget for `level`. Same validate-at-transition contract as
+// starThresholdsFor: a level missing maxCarries blows up on load, not on the
+// player's last Carry. `attemptsState` (pure) re-validates at use time.
+function maxCarriesFor(level) {
+  if (!level.maxCarries) {
+    throw new Error(`level "${level.name}" is missing maxCarries`);
+  }
+  return level.maxCarries;
+}
+
+// Won and failed both freeze the level — the only difference is which banner
+// (and which exit button) the player gets. Every interaction guard goes
+// through here so the two lock states can't drift apart.
+function levelLocked() {
+  return state.won || state.failed;
+}
+
 function loadLevel(idx) {
   state.levelIndex = idx;
   const level = currentLevel();
   // Validate level shape up-front so bad data surfaces at transition, not
   // on the first Carry — see comment on starThresholdsFor.
   starThresholdsFor(level);
+  maxCarriesFor(level);
   state.grid = level.bag;
   state.bag = [];
   // Prefix instance ids with the level index so they don't collide across
@@ -74,6 +101,8 @@ function loadLevel(idx) {
   state.carryResult = null;
   state.clockStartedAt = null;
   state.won = false;
+  state.carriesUsed = 0;
+  state.failed = false;
   if (clockInterval != null) {
     clearInterval(clockInterval);
     clockInterval = null;
@@ -93,27 +122,32 @@ const winBannerEl = document.getElementById("win-banner");
 const winBannerTextEl = document.getElementById("win-banner-text");
 const nextLevelBtn = document.getElementById("next-level-btn");
 const levelNameEl = document.getElementById("level-name");
+const carriesEl = document.getElementById("carries-left");
+const failBannerEl = document.getElementById("fail-banner");
+const retryBtn = document.getElementById("retry-btn");
 
 function render() {
   renderBag(bagEl, state.grid, state.bag, ITEMS, {
     onDrop: handleDropOnBag,
-    // After winning, nothing is draggable: clicking around shouldn't be able
-    // to modify a cleared level.
-    isRemovable: (p) => !state.won && isRemovable(p, state.bag, ITEMS),
+    // Once the level is locked (won or failed), nothing is draggable:
+    // clicking around shouldn't be able to modify a settled level.
+    isRemovable: (p) => !levelLocked() && isRemovable(p, state.bag, ITEMS),
     damagedIds: state.carryResult?.damagedIds,
     onDragStart: startClockIfNeeded,
   });
   renderTray(trayEl, state.tray, ITEMS, {
     onDrop: handleDropOnTray,
     onDragStart: startClockIfNeeded,
-    // Tray items are inherently removable, but the post-win lock still
-    // applies: after winning, nothing in the tray should be draggable.
-    isRemovable: () => !state.won,
+    // Tray items are inherently removable, but the lock still applies:
+    // after winning or failing, nothing in the tray should be draggable.
+    isRemovable: () => !levelLocked(),
   });
   renderResult();
   renderWinBanner();
+  renderFailBanner();
   renderLevelName();
-  carryBtn.disabled = state.won;
+  renderCarries();
+  carryBtn.disabled = levelLocked();
 }
 
 function renderResult() {
@@ -167,8 +201,18 @@ function renderWinBanner() {
   nextLevelBtn.hidden = !hasNext;
 }
 
+function renderFailBanner() {
+  failBannerEl.hidden = !state.failed;
+}
+
 function renderLevelName() {
   levelNameEl.textContent = currentLevel().name;
+}
+
+function renderCarries() {
+  const max = maxCarriesFor(currentLevel());
+  const { remaining } = attemptsState(max, state.carriesUsed, state.won);
+  carriesEl.textContent = `${remaining} / ${max}`;
 }
 
 // Any change to the bag invalidates the Carry result; clear it so stale
@@ -188,7 +232,7 @@ function findInstance(instanceId) {
 }
 
 function handleDropOnBag(instanceId, dropX) {
-  if (state.won) return;
+  if (levelLocked()) return;
   const found = findInstance(instanceId);
   if (!found) return;
   const { item, source } = found;
@@ -221,7 +265,7 @@ function handleDropOnBag(instanceId, dropX) {
 }
 
 function handleDropOnTray(instanceId) {
-  if (state.won) return;
+  if (levelLocked()) return;
   const found = findInstance(instanceId);
   if (!found || found.source !== "bag") return;
   if (!isRemovable(found.item, state.bag, ITEMS)) return;
@@ -233,8 +277,12 @@ function handleDropOnTray(instanceId) {
 }
 
 function handleCarry() {
-  if (state.won) return;
+  if (levelLocked()) return;
   const level = currentLevel();
+  // Every press of the button spends an attempt — even an empty-bag Carry.
+  // Charging up-front keeps the rule simple and un-gameable: there is no
+  // arrangement that lets the player peek at a result for free.
+  state.carriesUsed += 1;
   const { damagedIds } = evaluateBreakage(state.grid, state.bag, ITEMS);
   const survival = survivalScore(state.bag, damagedIds, ITEMS);
   const bonus = timeBonus(
@@ -259,12 +307,32 @@ function handleCarry() {
     state.won = true;
     freezeClock();
   }
+  // Only after the win check: winning on the final carry is a win, not a
+  // fail. Freeze the clock on fail too — everything is locked, so a ticking
+  // clock would be a lie.
+  const { failed } = attemptsState(
+    maxCarriesFor(level),
+    state.carriesUsed,
+    state.won,
+  );
+  if (failed) {
+    state.failed = true;
+    freezeClock();
+  }
   render();
 }
 
 function handleNextLevel() {
   if (state.levelIndex >= LEVELS.length - 1) return;
   loadLevel(state.levelIndex + 1);
+  render();
+}
+
+// Restart the failed level from scratch. loadLevel already resets the whole
+// per-level slice — bag, tray, carry result, clock, won, carriesUsed, failed
+// — so a retry is exactly a fresh visit to the same level.
+function handleRetry() {
+  loadLevel(state.levelIndex);
   render();
 }
 
@@ -287,8 +355,8 @@ function startClockIfNeeded() {
   clockInterval = setInterval(tickClock, CLOCK_TICK_MS);
 }
 
-// Stop the ticking display once the level is won. The frozen chip shows
-// the elapsed time at the moment of the winning Carry — there is no
+// Stop the ticking display once the level is won or failed. The frozen chip
+// shows the elapsed time at the moment of the deciding Carry — there is no
 // further score to lose by waiting.
 function freezeClock() {
   if (clockInterval != null) {
@@ -300,6 +368,7 @@ function freezeClock() {
 
 carryBtn.addEventListener("click", handleCarry);
 nextLevelBtn.addEventListener("click", handleNextLevel);
+retryBtn.addEventListener("click", handleRetry);
 
 loadLevel(0);
 render();

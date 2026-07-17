@@ -1,10 +1,18 @@
 // Level definitions. Data only — no behaviour.
 //
 // Each level lists the item ids in the tray (with multiplicities), the bag
-// size, the per-level time-bonus tuning, and a 3-star threshold ladder
-// (ascending). The 1-star bar is the win condition; clearing the level
-// requires final score >= starThresholds[0]. CARRY_FACTOR is global and
-// lives in src/logic.js.
+// size, the per-level time-bonus tuning, a 3-star threshold ladder
+// (ascending), and a Carry-attempt budget. The 1-star bar is the win
+// condition; clearing the level requires final score >= starThresholds[0].
+// CARRY_FACTOR is global and lives in src/logic.js.
+//
+// maxCarries tuning: strength is hidden from the player, so Carry doubles as
+// the only fragility probe — the budget is how many probes a level tolerates
+// before it fails. Level 1 gets 5 (a tutorial shouldn't be failable on a
+// mechanic the player hasn't learned), levels 2-3 get 4 (the fragility puzzle
+// is new; leave room to experiment), levels 4-7 get 3 (the roster is known by
+// then). Going below 3 would make failure feel arbitrary given hidden
+// strengths, so the capstone stays at 3 rather than tightening further.
 //
 // Bags were shrunk in `feature/smaller-bags-fewer-items` to roughly the size
 // of a real grocery bag (25-40 cells), and trays trimmed to 6-10 items per
@@ -34,6 +42,7 @@ export const LEVELS = [
     starThresholds: [80, 130, 170],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 5,
   },
 
   // Level 2 — Tall & Narrow. A 3x10 bag still forces strict stack-order
@@ -59,6 +68,7 @@ export const LEVELS = [
     starThresholds: [115, 160, 190],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 4,
   },
 
   // Level 3 — Wide & Shallow. A 9x4 bag is the spatial inverse of Level 2:
@@ -86,6 +96,7 @@ export const LEVELS = [
     starThresholds: [105, 145, 170],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 4,
   },
 
   // Level 4 — Protect the eggs. Multiple ultra-fragile items competing for
@@ -108,6 +119,7 @@ export const LEVELS = [
     starThresholds: [140, 200, 235],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 3,
   },
 
   // Level 5 — Fragile forest. A 6x6 bag stuffed (31/36, 86%) with mostly
@@ -132,6 +144,7 @@ export const LEVELS = [
     starThresholds: [140, 200, 240],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 3,
   },
 
   // Level 6 — Heavy haul. The inverse of Fragile Forest: a 5x7 bag at 29/35
@@ -157,6 +170,7 @@ export const LEVELS = [
     starThresholds: [105, 145, 170],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 3,
   },
 
   // Level 7 — The glass-jar bind. The capstone. The jar is heavy enough
@@ -189,5 +203,6 @@ export const LEVELS = [
     starThresholds: [140, 210, 235],
     timeBonusMax: 100,
     timeDecay: 1.0,
+    maxCarries: 3,
   },
 ];
