@@ -25,7 +25,8 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 .hint { margin: 0 0 12px 0; color: var(--hint); font-size: 13px; }
 
 .level-row,
-.clock-row {
+.clock-row,
+.carries-row {
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
@@ -36,7 +37,8 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   border-radius: 4px;
 }
 .level-label,
-.clock-label {
+.clock-label,
+.carries-label {
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -46,7 +48,8 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
   font-weight: 600;
   font-size: 14px;
 }
-.clock-value {
+.clock-value,
+.carries-value {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 14px;
@@ -258,6 +261,38 @@ header h1 { margin: 0 0 4px 0; font-size: 22px; }
 }
 .next-level-btn:hover { background: #e8f5e9; }
 .next-level-btn:active { transform: translateY(1px); }
+
+.fail-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #c0392b;
+  color: #fff;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+/* Same UA-cascade trap as .win-banner above: without this, `hidden` loses
+ * to the author `display: flex` and the banner never disappears. */
+.fail-banner[hidden] {
+  display: none;
+}
+
+.retry-btn {
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  background: #fff;
+  color: #c0392b;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: auto;
+}
+.retry-btn:hover { background: #fdecea; }
+.retry-btn:active { transform: translateY(1px); }
 
 .carry-btn:disabled {
   opacity: 0.5;

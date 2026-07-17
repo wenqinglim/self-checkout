@@ -6,6 +6,7 @@
 import {
   CARRY_FACTOR,
   TIME_BONUS_MAX,
+  attemptsState,
   canPlace,
   isRemovable,
   evaluateBreakage,
@@ -16,6 +17,7 @@ import {
   timeBonus,
 } from "../src/logic.js";
 import { ITEMS } from "../data/items.js";
+import { LEVELS } from "../data/levels.js";
 
 let passed = 0;
 let failed = 0;
@@ -461,6 +463,73 @@ test("starsFor: rejects malformed damagedCount", () => {
     let threw = false;
     try { starsFor(100, [80, 100, 120], bad); } catch (_) { threw = true; }
     assert(threw, `expected throw on damagedCount ${String(bad)}`);
+  }
+});
+
+// --- Carry attempts -------------------------------------------------------
+
+test("attemptsState: full budget at the start of a level", () => {
+  const s = attemptsState(3, 0, false);
+  assertEq(s.remaining, 3);
+  assertEq(s.failed, false);
+});
+
+test("attemptsState: counts down without failing while budget remains", () => {
+  const s = attemptsState(3, 2, false);
+  assertEq(s.remaining, 1);
+  assertEq(s.failed, false);
+});
+
+test("attemptsState: exhausted budget without a win is a fail", () => {
+  const s = attemptsState(3, 3, false);
+  assertEq(s.remaining, 0);
+  assertEq(s.failed, true);
+});
+
+test("attemptsState: winning on the final carry is a win, not a fail", () => {
+  const s = attemptsState(3, 3, true);
+  assertEq(s.remaining, 0);
+  assertEq(s.failed, false);
+});
+
+test("attemptsState: an early win never fails", () => {
+  assertEq(attemptsState(3, 1, true).failed, false);
+});
+
+test("attemptsState: rejects malformed maxCarries", () => {
+  // undefined covers the "level is missing the field" case.
+  for (const bad of [0, -1, 1.5, undefined, "3"]) {
+    let threw = false;
+    try { attemptsState(bad, 0, false); } catch (_) { threw = true; }
+    assert(threw, `expected throw on maxCarries ${String(bad)}`);
+  }
+});
+
+test("attemptsState: rejects malformed carriesUsed", () => {
+  // 4 > max means the controller's post-fail lock leaked a Carry through.
+  for (const bad of [-1, 4, 0.5, "0"]) {
+    let threw = false;
+    try { attemptsState(3, bad, false); } catch (_) { threw = true; }
+    assert(threw, `expected throw on carriesUsed ${String(bad)}`);
+  }
+});
+
+test("attemptsState: rejects non-boolean won", () => {
+  for (const bad of [undefined, null, 0, 1, "true"]) {
+    let threw = false;
+    try { attemptsState(3, 0, bad); } catch (_) { threw = true; }
+    assert(threw, `expected throw on won ${String(bad)}`);
+  }
+});
+
+test("every level declares an attempt budget", () => {
+  // Pins the data file: a level shipping without maxCarries would otherwise
+  // only surface when the player reaches it.
+  for (const level of LEVELS) {
+    assert(
+      Number.isInteger(level.maxCarries) && level.maxCarries >= 1,
+      `level "${level.name}" needs integer maxCarries >= 1`,
+    );
   }
 });
 
